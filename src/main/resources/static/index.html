@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>내 첫 페이지</title>
+    <meta name="description" content="간단한 HTML 기본 페이지" />
+    <style>
+        :root { --fg:#222; --bg:#f7f7f9; --accent:#4f46e5; }
+        * { box-sizing: border-box; }
+        html, body { height: 100%; }
+        body {
+            margin: 0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+            color: var(--fg); background: var(--bg);
+            display: grid; place-items: center;
+        }
+        .card {
+            background: #fff; padding: 2rem 2.25rem; border-radius: 16px;
+            box-shadow: 0 8px 30px rgba(0,0,0,.07);
+            max-width: 680px; width: min(92vw, 680px);
+        }
+        h1 { margin: 0 0 .5rem; font-size: clamp(1.4rem, 1rem + 2vw, 2rem); }
+        p { margin: .25rem 0 1rem; line-height: 1.6; }
+        a.button {
+            display: inline-block; padding: .65rem 1rem; border-radius: 10px;
+            text-decoration: none; background: var(--accent); color: #fff; font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+<main class="card">
+    <h1>안녕하세요! 👋</h1>
+    <p>이 페이지는 아주 간단한 HTML 기본 템플릿입니다. 스타일과 스크립트를 자유롭게 추가해 보세요.</p>
+    <a class="button" href="#">버튼 예시</a>
+</main>
+
+<script>
+    // 간단한 예시 스크립트
+    document.querySelector('.button').addEventListener('click', (e) => {
+        e.preventDefault();
+        alert('버튼이 클릭되었습니다!');
+    });
+</script>
+</body>
+</html>
