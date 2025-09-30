@@ -1,0 +1,21 @@
+{  
+  "name": "exercise-management-app",  
+  "version": "1.0.0",  
+  "description": "운동 관리 앱 - 아두이노 센서 연동 운동 챗봇",  
+  "main": "index.js",  
+  "scripts": {  
+    "dev": "vite",  
+    "build": "vite build",  
+    "preview": "vite preview"  
+  },  
+  "dependencies": {  
+    "vue": "^3.3.4",  
+    "vue-router": "^4.2.4",  
+    "axios": "^1.4.0",  
+    "leaflet": "^1.9.4"  
+  },  
+  "devDependencies": {  
+    "@vitejs/plugin-vue": "^4.2.3",  
+    "vite": "^4.4.5"  
+  }  
+} 
