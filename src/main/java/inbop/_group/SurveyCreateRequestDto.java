@@ -8,10 +8,11 @@ import java.util.List;
 @Getter
 public class SurveyCreateRequestDto {
     //1. 기본 정보
+    private String name;
     private String gender;
-    private int age;
-    private double height;
-    private double weight;
+    private Integer age;
+    private Double height;
+    private Double weight;
     private String pattern;
 
     //2. 건강 상태
@@ -29,7 +30,7 @@ public class SurveyCreateRequestDto {
     private String weeklyExercise;
     private List<String> preferredExercise;
     private List<String> ExerciseGoal;
-    private int fitnessLevel;
+    private Integer fitnessLevel;
 
     //5. 신체적 한계 및 특이사항
     private List<String> painArea;
