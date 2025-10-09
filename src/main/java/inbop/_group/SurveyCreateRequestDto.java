@@ -16,9 +16,9 @@ public class SurveyCreateRequestDto {
 
     //2. 건강 상태
     private List<String> diseases;
-    private boolean RecentSurgery;
+    private boolean recentSurgery;
     private String medicationDetails;
-    private String SleepHours;
+    private String sleepHours;
 
     //3. 생활 습관
     private String smoking;
@@ -28,12 +28,12 @@ public class SurveyCreateRequestDto {
     //4. 운동 경험 및 체력
     private String weeklyExercise;
     private List<String> preferredExercise;
-    private List<String> ExerciseGoal;
+    private List<String> exerciseGoal;
     private int fitnessLevel;
 
     //5. 신체적 한계 및 특이사항
     private List<String> painArea;
-    private boolean ExerciseRestriction;
+    private boolean exerciseRestriction;
 
     //6. 심리/동기 요인
     private List<String> motivation;

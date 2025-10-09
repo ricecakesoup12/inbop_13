@@ -4,21 +4,28 @@ package inbop._group;
 
 import inbop._group.SurveyService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RestController;
 
+import java.util.Map;
+
 @RequiredArgsConstructor
 @RestController
+@CrossOrigin(origins = "http://localhost:3001")
 public class SurveyController {
     private final SurveyService service;
 
     @PostMapping("/api/surveys")    //API 주소
-    public String createSurvey(@RequestBody SurveyCreateRequestDto requestDto) {
-        //서비스에 DTO 넘겨주기
+    public ResponseEntity<?> createSurvey(@RequestBody SurveyCreateRequestDto requestDto) {
+
         service.createSurvey(requestDto);
 
-        return "설문 제출 완료!";
-
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(Map.of("message", "설문이 성공적으로 제출되었습니다."));
     }
 }
