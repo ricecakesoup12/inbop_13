@@ -27,7 +27,7 @@ CREATE TABLE users (
     age INTEGER,
     height DOUBLE,
     weight DOUBLE,
-    face_url VARCHAR(100000),         -- 프로필 사진 (Base64)
+    face_url MEDIUMTEXT,         -- 프로필 사진 (Base64)
     chronic_diseases VARCHAR(500)     -- 지병
 );
 
