@@ -10,3 +10,4 @@ public interface SurveyRequestRepository extends JpaRepository<SurveyRequest, Lo
     List<SurveyRequest> findByUserId(Long userId);
 }
 
+

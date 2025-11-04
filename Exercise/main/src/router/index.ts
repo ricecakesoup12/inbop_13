@@ -47,6 +47,11 @@ const routes: RouteRecordRaw[] = [
         component: () => import('@/pages/user/UserDashboard.vue'),
       },
       {
+        path: 'location',
+        name: 'LiveMap',
+        component: () => import('@/pages/user/LiveMap.vue'),
+      },
+      {
         path: 'survey/:requestId',
         name: 'UserSurvey',
         component: () => import('@/pages/user/UserSurvey.vue'),

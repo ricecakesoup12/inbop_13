@@ -11,5 +11,6 @@ export interface User {
   faceUrl?: string
   chronicDiseases?: string[]
   position?: { lat: number; lng: number }
+  guardianPhone?: string  // 보호자 연락처
 }
 

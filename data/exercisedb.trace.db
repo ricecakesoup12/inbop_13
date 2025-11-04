@@ -1,0 +1,6 @@
+2025-11-03 15:44:51.036179+09:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "FACE_URL CHARACTER VARYING(100000)": "'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAYACAIAAABn4K39AAC8xWNhQlgAA... (2018710)"; SQL statement:
+insert into users (age,chronic_diseases,face_url,gender,height,name,user_code,weight,id) values (?,?,?,?,?,?,?,?,default) [22001-232]
+2025-11-03 15:44:55.700343+09:00 jdbc[13]: exception
+org.h2.jdbc.JdbcSQLDataException: Value too long for column "FACE_URL CHARACTER VARYING(100000)": "'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAABAAAAAYACAIAAABn4K39AAC8xWNhQlgAA... (2018710)"; SQL statement:
+insert into users (age,chronic_diseases,face_url,gender,height,name,user_code,weight,id) values (?,?,?,?,?,?,?,?,default) [22001-232]

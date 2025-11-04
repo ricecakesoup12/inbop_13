@@ -12,7 +12,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { Line } from 'vue-chartjs'
-import AppCard from '@/components/common/AppCard.vue'
+import AppCard from '../common/AppCard.vue'
 import '@/components/charts/_LineChartBase'
 
 const props = defineProps<{ data: { x: string; y: number }[] }>()

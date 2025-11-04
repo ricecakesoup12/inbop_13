@@ -27,5 +27,8 @@ public class User {
     
     @Column(length = 500)
     private String chronicDiseases;  // 지병 (쉼표로 구분)
+    
+    @Column(length = 20)
+    private String guardianPhone;  // 보호자 연락처
 }
 

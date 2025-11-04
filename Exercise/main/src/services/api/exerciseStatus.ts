@@ -20,3 +20,4 @@ export async function getExerciseStatus(userId: string): Promise<ExerciseStatus>
   return data
 }
 
+

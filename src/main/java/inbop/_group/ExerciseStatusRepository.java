@@ -9,3 +9,4 @@ public interface ExerciseStatusRepository extends JpaRepository<ExerciseStatus, 
     Optional<ExerciseStatus> findByUserId(Long userId);
 }
 
+
