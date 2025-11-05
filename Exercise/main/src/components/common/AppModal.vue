@@ -6,7 +6,7 @@
         class="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50"
         @click.self="$emit('close')"
       >
-        <div class="bg-white rounded-2xl shadow-xl w-full max-w-md max-h-[80vh] overflow-auto">
+        <div :class="['bg-white rounded-2xl shadow-xl w-full max-h-[80vh] overflow-auto', wide ? 'max-w-6xl' : 'max-w-md']">
           <div class="bg-beige p-5 border-b border-accent flex justify-between items-center sticky top-0">
             <h3 class="font-semibold text-lg text-text-main font-gowun">{{ title }}</h3>
             <button
@@ -31,7 +31,7 @@
 </template>
 
 <script setup lang="ts">
-defineProps<{ open: boolean; title?: string }>()
+defineProps<{ open: boolean; title?: string; wide?: boolean }>()
 defineEmits<{ close: [] }>()
 </script>
 

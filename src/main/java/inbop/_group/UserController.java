@@ -146,5 +146,63 @@ public class UserController {
         boolean exists = userRepository.existsByUserCode(userCode);
         return ResponseEntity.ok(exists);
     }
+    
+    // 새싹 개수 조회
+    @GetMapping("/{id}/sprouts")
+    public ResponseEntity<Integer> getSproutCount(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(user -> ResponseEntity.ok(user.getSproutCount() != null ? user.getSproutCount() : 0))
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    // 새싹 증가 (운동 목표 완료 시)
+    @PostMapping("/{id}/sprouts/earn")
+    public ResponseEntity<?> earnSprout(@PathVariable Long id) {
+        return userRepository.findById(id)
+                .map(user -> {
+                    // 오늘 날짜 확인 (YYYY-MM-DD 형식)
+                    String today = java.time.LocalDate.now().toString();
+                    
+                    // 오늘 이미 새싹을 받았는지 확인
+                    if (today.equals(user.getLastSproutEarnedDate())) {
+                        return ResponseEntity.badRequest().body("오늘은 이미 새싹을 받았습니다.");
+                    }
+                    
+                    // 새싹 증가
+                    int currentCount = user.getSproutCount() != null ? user.getSproutCount() : 0;
+                    user.setSproutCount(currentCount + 1);
+                    user.setLastSproutEarnedDate(today);
+                    
+                    User updatedUser = userRepository.save(user);
+                    System.out.println("✅ 새싹 획득: 사용자 ID=" + id + ", 새싹 개수=" + updatedUser.getSproutCount());
+                    
+                    return ResponseEntity.ok(updatedUser);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
+    
+    // 새싹 차감 (상점 구매 시)
+    @PostMapping("/{id}/sprouts/spend")
+    public ResponseEntity<?> spendSprouts(@PathVariable Long id, @RequestBody Integer amount) {
+        if (amount == null || amount <= 0) {
+            return ResponseEntity.badRequest().body("유효하지 않은 새싹 개수입니다.");
+        }
+        
+        return userRepository.findById(id)
+                .map(user -> {
+                    int currentCount = user.getSproutCount() != null ? user.getSproutCount() : 0;
+                    
+                    if (currentCount < amount) {
+                        return ResponseEntity.badRequest().body("보유 새싹이 부족합니다. (보유: " + currentCount + ", 필요: " + amount + ")");
+                    }
+                    
+                    user.setSproutCount(currentCount - amount);
+                    User updatedUser = userRepository.save(user);
+                    System.out.println("✅ 새싹 차감: 사용자 ID=" + id + ", 차감=" + amount + ", 남은 새싹=" + updatedUser.getSproutCount());
+                    
+                    return ResponseEntity.ok(updatedUser);
+                })
+                .orElse(ResponseEntity.notFound().build());
+    }
 }
 

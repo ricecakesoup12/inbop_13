@@ -7,21 +7,33 @@
       <div class="flex flex-col items-center justify-center w-1/2 relative">
         <!-- 오른쪽 상단 버튼들 -->
         <div class="absolute top-0 right-0 flex flex-col gap-2 z-20">
-          <!-- 상점 버튼 -->
+          <!-- 새싹 버튼 -->
           <button
-            @click="showShopPopup = true"
-            class="bg-gradient-to-br from-pink-200 via-purple-200 to-blue-200 hover:from-pink-300 hover:via-purple-300 hover:to-blue-300 text-pink-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
-            title="상점 열기"
+            class="bg-green-200 hover:bg-green-300 text-green-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110 relative"
+            title="보유 새싹"
+            disabled
           >
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-            </svg>
+            <div class="text-2xl mb-0.5">🌱</div>
+            <div class="text-xs font-bold">{{ sproutCount }}</div>
           </button>
+          
+          <!-- 상점 버튼 -->
+          <a>
+            <button
+              @click="showShopPopup = true"
+              class="bg-pink-200 hover:bg-pink-300 text-pink-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110"
+              title="상점 열기"
+            >
+              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+              </svg>
+            </button>
+          </a>
           
           <!-- 119 신고 버튼 -->
           <a href="tel:119">
             <button
-              class="bg-gradient-to-br from-red-200 via-orange-200 to-red-300 hover:from-red-300 hover:via-orange-300 hover:to-red-400 text-red-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+              class="bg-red-200 hover:bg-red-300 text-red-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110"
               title="119 신고"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -33,7 +45,7 @@
           <!-- 보호자 연락 버튼 -->
           <a v-if="currentUser?.guardianPhone" :href="`tel:${currentUser.guardianPhone}`">
             <button
-              class="bg-gradient-to-br from-green-200 via-teal-200 to-green-300 hover:from-green-300 hover:via-teal-300 hover:to-green-400 text-green-700 rounded-full p-3 shadow-lg hover:shadow-xl transition-all duration-300 transform hover:scale-110"
+              class="bg-green-200 hover:bg-green-300 text-green-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110"
               title="보호자 연락"
             >
               <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -65,33 +77,54 @@
         </div>
       </div>
       
-      <!-- 우측: 대화창 디자인 -->
-      <div class="chat-bubble-container w-1/2 relative flex flex-col justify-center">
-        <!-- 사용자 이름 표시 -->
-        <div v-if="currentUser" class="absolute -top-12 left-4 bg-orange-100 text-orange-800 px-4 py-2 rounded-lg text-sm font-semibold font-gowun shadow-md">
-          {{ currentUser.name }}
-        </div>
-        
-        <!-- 대화창 본체 -->
-        <div class="chat-bubble-body bg-[#F5F0E8] rounded-2xl shadow-lg px-6 py-3 flex flex-col" style="height: 216px;">
-          <!-- 대화 내용 컨테이너 (봇 메시지만) -->
-          <div class="chat-content-container overflow-y-auto" style="height: 162px;">
-            <div 
-              v-for="(chatMessage, index) in botMessages" 
-              :key="index" 
-              class="text-sm mb-3"
-            >
-              <span class="text-text-main font-gowun">{{ chatMessage.text }}</span>
+      <!-- 우측: 목표치 표시 -->
+      <div class="w-1/2 relative flex flex-col justify-center">
+        <!-- 목표치 표시 (처방 수락 후에만) -->
+        <div v-if="hasActivePrescription" class="px-6 py-4">
+          <div class="text-center mb-4">
+            <div class="text-lg font-bold text-gray-800 mb-4 font-gowun">오늘의 운동 목표</div>
+            
+            <!-- 모든 운동 완료 시 -->
+            <div v-if="isAllExercisesCompleted" class="space-y-4">
+              <div class="text-6xl mb-4">🌱</div>
+              <div class="text-2xl font-bold text-primary font-gowun">오늘의 운동 완료!</div>
             </div>
-            <div v-if="botMessages.length === 0" class="text-center text-gray-400 font-gowun py-8">
-              아직 대화 내용이 없습니다
+
+            <!-- 운동 버튼들 -->
+            <div v-else-if="activePrescription" class="space-y-3 text-sm font-gowun">
+              <!-- 시작 스트레칭 버튼 -->
+              <button 
+                v-if="!exerciseCompleted.startStretching"
+                @click="completeStartStretching"
+                class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+              >
+                시작 스트레칭 {{ activePrescription.startStretchingMinutes }}분
+              </button>
+              
+              <!-- 인터벌 운동 버튼들 (세트 수만큼) -->
+              <div class="space-y-2">
+                <template v-for="setNum in activePrescription.sets">
+                  <button 
+                    v-if="!exerciseCompleted.intervals[setNum - 1]"
+                    :key="setNum"
+                    @click="completeInterval(setNum - 1)"
+                    class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+                  >
+                    인터벌 {{ setNum }}세트: 걷기 {{ activePrescription.walkingMinutes }}분 → 뛰기 {{ activePrescription.runningMinutes }}분
+                  </button>
+                </template>
+              </div>
+              
+              <!-- 마무리 스트레칭 버튼 -->
+              <button 
+                v-if="!exerciseCompleted.endStretching"
+                @click="completeEndStretching"
+                class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+              >
+                마무리 스트레칭 {{ activePrescription.endStretchingMinutes }}분
+              </button>
             </div>
           </div>
-        </div>
-        
-        <!-- 대화창 포인터 -->
-        <div class="chat-bubble-pointer absolute -bottom-2 left-1/2 transform -translate-x-1/2">
-          <div class="w-0 h-0 border-l-8 border-r-8 border-t-8 border-l-transparent border-r-transparent border-t-[#D4A574]"></div>
         </div>
       </div>
       </div>
@@ -172,7 +205,7 @@
           </div>
           <div class="space-y-2">
             <div class="text-center">
-              <UserLocationMap :position="position" small />
+              <NaverUserLocationMap :position="position" small :userName="currentUser?.name" />
             </div>
             <!-- 현재 주소 표시 -->
             <div v-if="currentAddress" class="text-xs text-gray-600 font-gowun text-center px-2 py-1 bg-gray-50 rounded">
@@ -191,16 +224,16 @@
         </div>
       </AppCard>
 
-      <!-- 우측: 챗봇 + 음성 인식 -->
+      <!-- 우측: 대화창 -->
       <AppCard>
         <div class="p-4">
-          <h3 class="font-semibold text-text-main mb-4 font-gowun">코칭 챗봇</h3>
+          <h3 class="font-semibold text-text-main mb-4 font-gowun">대화창</h3>
           <div class="h-48 border rounded-lg p-3 overflow-auto bg-gray-50 mb-3 space-y-2">
             <div v-for="(chatMessage, index) in chatMessages" :key="index" class="text-sm">
-              <span :class="chatMessage.role === 'user' ? 'text-primary font-semibold' : 'text-text-main font-semibold'" class="font-gowun">
-                {{ chatMessage.role === 'user' ? '나' : '봇' }}:
+              <span :class="chatMessage.sender === 'user' ? 'text-primary font-semibold' : 'text-green-600 font-semibold'" class="font-gowun">
+                {{ chatMessage.sender === 'user' ? currentUser?.name || '나' : '운동 선생님' }}:
               </span>
-              <span class="text-text-sub ml-1 font-gowun">{{ chatMessage.text }}</span>
+              <span class="text-text-sub ml-1 font-gowun">{{ chatMessage.message }}</span>
             </div>
           </div>
           <div class="flex gap-2">
@@ -211,18 +244,27 @@
               placeholder="메시지 입력"
             />
             <AppButton @click="sendChatMessage" variant="solid" class="px-4">전송</AppButton>
-            <button
-              @click="toggleVoiceRecognition"
-              :class="listening ? 'bg-red-500 text-white' : 'bg-gray-100 text-text-main'"
-              class="px-3 py-2 rounded-lg transition-colors"
-              :title="listening ? '음성 인식 중...' : '음성 인식 시작'"
-            >
-              🎤
-            </button>
           </div>
         </div>
       </AppCard>
     </div>
+
+    <!-- 처방 알람 팝업 -->
+    <AppModal :open="showPrescriptionPopup" title="새로운 운동 처방" @close="closePrescriptionPopup">
+      <div class="space-y-4">
+        <p class="text-text-sub mb-4 font-gowun">운동 선생님으로부터 새로운 운동 처방이 도착했습니다.</p>
+        <div v-if="pendingPrescription" class="bg-green-50 rounded-lg p-4 space-y-2 font-gowun">
+          <div class="text-sm"><span class="font-semibold">시작 스트레칭:</span> {{ pendingPrescription.startStretchingMinutes }}분</div>
+          <div class="text-sm"><span class="font-semibold">인터벌 운동:</span> 걷기 {{ pendingPrescription.walkingMinutes }}분 → 뛰기 {{ pendingPrescription.runningMinutes }}분 ({{ pendingPrescription.sets }}세트)</div>
+          <div class="text-sm"><span class="font-semibold">마무리 스트레칭:</span> {{ pendingPrescription.endStretchingMinutes }}분</div>
+        </div>
+        <p class="text-text-sub font-gowun">처방을 수락하시겠습니까?</p>
+      </div>
+      <template #footer>
+        <AppButton variant="ghost" @click="declinePrescriptionHandler">거부</AppButton>
+        <AppButton variant="solid" @click="acceptPrescriptionHandler">수락</AppButton>
+      </template>
+    </AppModal>
 
     <!-- 설문 팝업 -->
     <AppModal :open="showSurveyPopup" title="새로운 설문 요청" @close="closeSurveyPopup">
@@ -246,11 +288,18 @@
               <div 
                 v-for="item in shopItems.slice(0, 4)" 
                 :key="item.id"
-                class="bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-pink-300"
+                @click="buyItem(item)"
+                :class="[
+                  'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
+                  sproutCount >= item.price 
+                    ? 'border-transparent hover:border-pink-300' 
+                    : 'border-gray-300 opacity-50 cursor-not-allowed'
+                ]"
               >
                 <div class="text-3xl mb-1 text-center">{{ item.emoji }}</div>
                 <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-                <div class="text-xs text-center text-pink-500 font-gowun mt-1">{{ item.price }}원</div>
+                <div class="text-xs text-center text-pink-500 font-gowun mt-1">🌱 {{ item.price }}</div>
+                <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
               </div>
             </div>
           </div>
@@ -262,11 +311,18 @@
               <div 
                 v-for="item in shopItems.slice(4, 8)" 
                 :key="item.id"
-                class="bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-purple-300"
+                @click="buyItem(item)"
+                :class="[
+                  'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
+                  sproutCount >= item.price 
+                    ? 'border-transparent hover:border-purple-300' 
+                    : 'border-gray-300 opacity-50 cursor-not-allowed'
+                ]"
               >
                 <div class="text-3xl mb-1 text-center">{{ item.emoji }}</div>
                 <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-                <div class="text-xs text-center text-purple-500 font-gowun mt-1">{{ item.price }}원</div>
+                <div class="text-xs text-center text-purple-500 font-gowun mt-1">🌱 {{ item.price }}</div>
+                <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
               </div>
             </div>
           </div>
@@ -278,11 +334,18 @@
               <div 
                 v-for="item in shopItems.slice(8, 12)" 
                 :key="item.id"
-                class="bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2 border-transparent hover:border-blue-300"
+                @click="buyItem(item)"
+                :class="[
+                  'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
+                  sproutCount >= item.price 
+                    ? 'border-transparent hover:border-blue-300' 
+                    : 'border-gray-300 opacity-50 cursor-not-allowed'
+                ]"
               >
                 <div class="text-3xl mb-1 text-center">{{ item.emoji }}</div>
                 <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-                <div class="text-xs text-center text-blue-500 font-gowun mt-1">{{ item.price }}원</div>
+                <div class="text-xs text-center text-blue-500 font-gowun mt-1">🌱 {{ item.price }}</div>
+                <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
               </div>
             </div>
           </div>
@@ -298,18 +361,19 @@ import { useRouter } from 'vue-router'
 import AppCard from '@/components/common/AppCard.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppModal from '@/components/common/AppModal.vue'
-import UserLocationMap from '@/components/map/UserLocationMap.vue'
+import NaverUserLocationMap from '@/components/map/NaverUserLocationMap.vue'
 import { useGeo } from '@/composables/useGeo'
-import { useSpeech } from '@/composables/useSpeech'
 import { useMetricsStore } from '@/stores/metrics.store'
+import { getChatMessages, sendChatMessage as sendChatAPI, type ChatMessage } from '@/services/api/chatMessages'
 import { useUsersStore } from '@/stores/users.store'
 import { getPendingSurveyRequests } from '@/services/api/surveyRequests'
 import { updateExerciseStatus } from '@/services/api/exerciseStatus'
+import { getPendingPrescription, acceptPrescription, declinePrescription, getPrescriptionsByUser, completePrescription, type ExercisePrescription } from '@/services/api/exercisePrescriptions'
 import type { SurveyRequest } from '@/services/api/surveyRequests'
+import { getSproutCount, earnSprout, spendSprouts } from '@/services/api/sprouts'
 
 const router = useRouter()
 const { position } = useGeo()
-const { listening, transcript, start, stop } = useSpeech()
 const metricsStore = useMetricsStore()
 const usersStore = useUsersStore()
 
@@ -349,9 +413,39 @@ if (typeof window !== 'undefined') {
 }
 const caloriesBurned = ref(0)
 const exerciseTimeInSeconds = ref(0)
-const chatMessages = ref<{ role: 'user' | 'bot'; text: string }[]>([
-  { role: 'bot', text: '안녕하세요! 운동을 도와드릴게요.' },
-])
+const chatMessages = ref<ChatMessage[]>([])
+
+// 처방 관련
+const showPrescriptionPopup = ref(false)
+const pendingPrescription = ref<ExercisePrescription | null>(null)
+const activePrescription = ref<ExercisePrescription | null>(null)
+const hasActivePrescription = computed(() => activePrescription.value !== null)
+
+// 운동 완료 상태
+const exerciseCompleted = ref({
+  startStretching: false,
+  intervals: [] as boolean[], // 세트별 완료 상태
+  endStretching: false
+})
+
+// 모든 운동 완료 여부 확인
+const isAllExercisesCompleted = computed(() => {
+  if (!activePrescription.value) return false
+  
+  // 시작 스트레칭 완료 확인
+  if (!exerciseCompleted.value.startStretching) return false
+  
+  // 모든 인터벌 세트 완료 확인
+  const allIntervalsCompleted = activePrescription.value.sets > 0 && 
+    exerciseCompleted.value.intervals.length === activePrescription.value.sets &&
+    exerciseCompleted.value.intervals.every(completed => completed)
+  if (!allIntervalsCompleted) return false
+  
+  // 마무리 스트레칭 완료 확인
+  if (!exerciseCompleted.value.endStretching) return false
+  
+  return true
+})
 
 // 아바타 시스템
 const avatarLevel = ref(3) // 1=건강, 5=살찜
@@ -444,6 +538,10 @@ const showSurveyPopup = ref(false)
 const showShopPopup = ref(false)
 const pendingSurveyRequests = ref<SurveyRequest[]>([])
 
+// 새싹 관련
+const sproutCount = ref(0)
+const isProcessingSproutEarn = ref(false) // 새싹 획득 중복 방지
+
 // 상점 아이템 데이터
 const shopItems = ref([
   { id: 1, name: '운동화', emoji: '👟', price: 5000 },
@@ -469,9 +567,9 @@ const displayedMessages = computed(() => {
   return chatMessages.value.slice(start, end)
 })
 
-// 컨텐츠 영역 대화창에는 봇 메시지만 표시
+// 컨텐츠 영역 대화창에는 운동 선생님 메시지만 표시
 const botMessages = computed(() => {
-  return chatMessages.value.filter(msg => msg.role === 'bot')
+  return chatMessages.value.filter(msg => msg.sender === 'guardian')
 })
 
 const currentBotChatPage = ref(0)
@@ -493,6 +591,16 @@ const nextBotChatPage = () => {
 const previousBotChatPage = () => {
   if (currentBotChatPage.value > 0) {
     currentBotChatPage.value--
+  }
+}
+
+// 채팅 메시지 로드
+const loadChatMessages = async (userId: string) => {
+  try {
+    chatMessages.value = await getChatMessages(userId)
+    console.log('✅ 채팅 메시지 로드 완료:', chatMessages.value.length, '개')
+  } catch (error) {
+    console.error('❌ 채팅 메시지 로드 실패:', error)
   }
 }
 
@@ -536,12 +644,18 @@ onMounted(async () => {
   // 실시간 바이탈 구독
   metricsStore.subscribeRealtime(userId)
 
-  // 환영 메시지
-  if (currentUser.value) {
-    chatMessages.value.unshift({
-      role: 'bot',
-      text: `${currentUser.value.name}님, 환영합니다! 오늘도 힘차게 운동해봐요!`,
-    })
+  // 채팅 메시지 로드 (에러 발생 시에도 계속 진행)
+  try {
+    await loadChatMessages(userId)
+  } catch (error) {
+    console.warn('⚠️ 채팅 메시지 로드 실패 (무시하고 계속):', error)
+  }
+
+  // 새싹 개수 로드
+  try {
+    await loadSproutCount(userId)
+  } catch (error) {
+    console.warn('⚠️ 새싹 개수 로드 실패 (무시하고 계속):', error)
   }
 
   // 대기 중인 설문 요청 조회
@@ -556,7 +670,284 @@ onMounted(async () => {
   window.addEventListener('surveyRequest', () => {
     showSurveyPopup.value = true
   })
+
+  // 처방 확인 및 로드
+  await checkPendingPrescription(userId)
+  
+  // 주기적으로 처방 확인 (30초마다)
+  setInterval(() => {
+    checkPendingPrescription(userId)
+  }, 30000)
 })
+
+// 처방 확인
+const checkPendingPrescription = async (userId: string) => {
+  try {
+    console.log('🔍 대기 중인 처방 확인 중... userId:', userId)
+    const prescription = await getPendingPrescription(userId)
+    if (prescription) {
+      pendingPrescription.value = prescription
+      showPrescriptionPopup.value = true
+      console.log('✅ 새로운 처방 발견:', prescription)
+    } else {
+      console.log('⚠️ 대기 중인 처방 없음')
+    }
+  } catch (error: any) {
+    console.error('❌ 처방 확인 실패:', error)
+    console.error('❌ 에러 상세:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    })
+  }
+  
+  // 활성화된 처방 확인 (ACCEPTED 상태)
+  try {
+    console.log('🔍 활성 처방 확인 중... userId:', userId)
+    const prescriptions = await getPrescriptionsByUser(userId)
+    console.log('📋 모든 처방:', prescriptions)
+    
+    const accepted = prescriptions.find(p => p.status === 'ACCEPTED' && !p.completedAt)
+    if (accepted) {
+      // 새로운 처방이거나 이전 처방과 다른 경우 완료 상태 초기화
+      if (!activePrescription.value || activePrescription.value.id !== accepted.id) {
+        activePrescription.value = accepted
+        resetExerciseCompleted()
+      } else {
+        activePrescription.value = accepted
+      }
+      hasActivePrescription.value = true
+      console.log('✅ 활성 처방:', accepted)
+      console.log('🔗 시작 스트레칭 URL:', accepted.startStretchingUrl)
+      console.log('🔗 마무리 스트레칭 URL:', accepted.endStretchingUrl)
+    } else {
+      hasActivePrescription.value = false
+      console.log('⚠️ 활성 처방 없음')
+    }
+  } catch (error: any) {
+    console.error('❌ 활성 처방 확인 실패:', error)
+    console.error('❌ 에러 상세:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    })
+  }
+}
+
+// 처방 수락
+const acceptPrescriptionHandler = async () => {
+  if (!pendingPrescription.value?.id) {
+    console.error('❌ pendingPrescription.value.id가 없습니다')
+    return
+  }
+  
+  try {
+    console.log('🔍 처방 수락 시도:', pendingPrescription.value.id)
+    const accepted = await acceptPrescription(pendingPrescription.value.id)
+    console.log('✅ 처방 수락 API 응답:', accepted)
+    
+    activePrescription.value = accepted
+    hasActivePrescription.value = true
+    showPrescriptionPopup.value = false
+    pendingPrescription.value = null
+    
+    // 새로운 처방 수락 시 운동 완료 상태 초기화
+    resetExerciseCompleted()
+    
+    alert('처방을 수락했습니다!')
+    console.log('✅ 처방 수락 완료')
+  } catch (error: any) {
+    console.error('❌ 처방 수락 실패:', error)
+    console.error('❌ 에러 상세:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    })
+    alert('처방 수락에 실패했습니다.')
+  }
+}
+
+// 운동 완료 상태 초기화
+const resetExerciseCompleted = () => {
+  exerciseCompleted.value = {
+    startStretching: false,
+    intervals: [],
+    endStretching: false
+  }
+  
+  // 인터벌 배열 초기화 (세트 수만큼)
+  if (activePrescription.value) {
+    exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(false)
+  }
+}
+
+// 모든 운동 완료 처리 (공통 함수)
+const handleAllExercisesCompleted = async () => {
+  // 중복 실행 방지
+  if (isProcessingSproutEarn.value) {
+    console.log('⚠️ 새싹 획득 처리 중입니다. 대기...')
+    return
+  }
+  
+  if (!activePrescription.value) {
+    console.warn('⚠️ 활성 처방이 없습니다')
+    return
+  }
+  
+  const allCompleted = 
+    exerciseCompleted.value.startStretching &&
+    exerciseCompleted.value.intervals.length === activePrescription.value.sets &&
+    exerciseCompleted.value.intervals.every(completed => completed) &&
+    exerciseCompleted.value.endStretching
+  
+  if (!allCompleted) {
+    console.log('📊 운동 완료 상태:', {
+      startStretching: exerciseCompleted.value.startStretching,
+      intervals: exerciseCompleted.value.intervals,
+      endStretching: exerciseCompleted.value.endStretching,
+      requiredSets: activePrescription.value.sets,
+      intervalsLength: exerciseCompleted.value.intervals.length
+    })
+    return
+  }
+  
+  // 중복 실행 방지 플래그 설정
+  isProcessingSproutEarn.value = true
+  
+  try {
+    console.log('🎉 오늘의 운동 완료!')
+    
+    const userId = localStorage.getItem('userId')
+    if (!userId) {
+      console.error('❌ userId가 없습니다')
+      return
+    }
+    
+    // 1. 처방 상태를 COMPLETED로 변경 (DB에 저장)
+    if (activePrescription.value?.id) {
+      try {
+        await completePrescription(activePrescription.value.id)
+        console.log('✅ 처방 완료 상태로 변경 완료 (DB 저장됨)')
+      } catch (error) {
+        console.error('❌ 처방 완료 상태 변경 실패:', error)
+      }
+    }
+    
+    // 2. 새싹 획득 (하루 1회 제한은 백엔드에서 처리)
+    try {
+      console.log('🌱 새싹 획득 시도... userId:', userId)
+      const result = await earnSprout(userId)
+      sproutCount.value = result.sproutCount
+      console.log('✅ 새싹 획득 완료! 현재 새싹:', sproutCount.value)
+      alert(`🎉 오늘의 운동 완료!\n🌱 새싹 +1 획득! (보유: ${sproutCount.value}개)`)
+    } catch (error: any) {
+      console.error('❌ 새싹 획득 실패:', error)
+      console.error('❌ 에러 상세:', {
+        message: error?.message,
+        response: error?.response?.data,
+        status: error?.response?.status,
+        fullError: error
+      })
+      // 오늘 이미 받았으면 에러 메시지만 표시
+      if (error.message?.includes('이미')) {
+        alert('오늘은 이미 새싹을 받았습니다.')
+      } else {
+        alert('새싹 획득에 실패했습니다. 다시 시도해주세요.')
+      }
+    }
+  } finally {
+    // 플래그 해제
+    isProcessingSproutEarn.value = false
+  }
+}
+
+// 시작 스트레칭 완료
+const completeStartStretching = async () => {
+  console.log('🔍 시작 스트레칭 버튼 클릭')
+  console.log('📋 activePrescription:', activePrescription.value)
+  console.log('🔗 startStretchingUrl:', activePrescription.value?.startStretchingUrl)
+  
+  // URL이 있으면 새 창으로 열기
+  if (activePrescription.value?.startStretchingUrl) {
+    const url = activePrescription.value.startStretchingUrl
+    console.log('✅ URL이 있음, 새 창으로 열기:', url)
+    const newWindow = window.open(url, '_blank')
+    if (!newWindow) {
+      console.warn('⚠️ 팝업이 차단되었을 수 있습니다')
+      alert('팝업 차단을 해제해주세요')
+    } else {
+      console.log('✅ 새 창 열림')
+    }
+  } else {
+    console.log('ℹ️ URL이 없어서 새 창 열지 않음')
+  }
+  
+  exerciseCompleted.value.startStretching = true
+  console.log('✅ 시작 스트레칭 완료')
+  await handleAllExercisesCompleted()
+}
+
+// 인터벌 세트 완료
+const completeInterval = async (setIndex: number) => {
+  exerciseCompleted.value.intervals[setIndex] = true
+  console.log(`✅ 인터벌 ${setIndex + 1}세트 완료`)
+  await handleAllExercisesCompleted()
+}
+
+// 마무리 스트레칭 완료
+const completeEndStretching = async () => {
+  console.log('🔍 마무리 스트레칭 버튼 클릭')
+  console.log('📋 activePrescription:', activePrescription.value)
+  console.log('🔗 endStretchingUrl:', activePrescription.value?.endStretchingUrl)
+  
+  // URL이 있으면 새 창으로 열기
+  if (activePrescription.value?.endStretchingUrl) {
+    const url = activePrescription.value.endStretchingUrl
+    console.log('✅ URL이 있음, 새 창으로 열기:', url)
+    const newWindow = window.open(url, '_blank')
+    if (!newWindow) {
+      console.warn('⚠️ 팝업이 차단되었을 수 있습니다')
+      alert('팝업 차단을 해제해주세요')
+    } else {
+      console.log('✅ 새 창 열림')
+    }
+  } else {
+    console.log('ℹ️ URL이 없어서 새 창 열지 않음')
+  }
+  
+  exerciseCompleted.value.endStretching = true
+  console.log('✅ 마무리 스트레칭 완료')
+  await handleAllExercisesCompleted()
+}
+
+// 처방 거부
+const declinePrescriptionHandler = async () => {
+  if (!pendingPrescription.value?.id) {
+    console.error('❌ pendingPrescription.value.id가 없습니다')
+    return
+  }
+  
+  try {
+    console.log('🔍 처방 거부 시도:', pendingPrescription.value.id)
+    await declinePrescription(pendingPrescription.value.id)
+    showPrescriptionPopup.value = false
+    pendingPrescription.value = null
+    console.log('✅ 처방 거부 완료')
+  } catch (error: any) {
+    console.error('❌ 처방 거부 실패:', error)
+    console.error('❌ 에러 상세:', {
+      message: error?.message,
+      status: error?.response?.status,
+      data: error?.response?.data
+    })
+    alert('처방 거부에 실패했습니다.')
+  }
+}
+
+// 처방 팝업 닫기
+const closePrescriptionPopup = () => {
+  showPrescriptionPopup.value = false
+}
 
 const loadPendingSurveyRequests = async (userId: string) => {
   try {
@@ -611,35 +1002,40 @@ const exerciseTimeFormatted = computed(() => {
   return `${minutes}분 ${seconds}초`
 })
 
-const sendChatMessage = () => {
+const sendChatMessage = async () => {
   if (!chatInput.value.trim()) return
 
-  chatMessages.value.push({ role: 'user', text: chatInput.value })
+  const userId = localStorage.getItem('userId')
+  if (!userId || !currentUser.value) {
+    alert('사용자 정보를 확인할 수 없습니다.')
+    return
+  }
 
-  // 간단한 봇 응답 (실제로는 API 연동)
-  setTimeout(() => {
-    chatMessages.value.push({ role: 'bot', text: '좋아요! 계속 힘내세요!' })
+  const messageText = chatInput.value
+  chatInput.value = ''
+
+  try {
+    // API로 메시지 전송
+    const newMessage = await sendChatAPI({
+      userId: userId,
+      sender: 'user',
+      senderName: currentUser.value.name,
+      message: messageText
+    })
+
+    // 로컬 채팅에 추가
+    chatMessages.value.push(newMessage)
+    console.log('✅ 메시지 전송 완료:', newMessage)
+
     // 새 메시지가 추가되면 마지막 페이지로 이동
     currentChatPage.value = chatPages.value - 1
-    currentBotChatPage.value = botChatPages.value - 1
-  }, 500)
-
-  chatInput.value = ''
-}
-
-const toggleVoiceRecognition = () => {
-  if (listening.value) {
-    stop()
-  } else {
-    start()
-    // 음성 인식 결과를 input에 반영
-    setTimeout(() => {
-      if (transcript.value) {
-        chatInput.value = transcript.value
-      }
-    }, 100)
+  } catch (error) {
+    console.error('❌ 메시지 전송 실패:', error)
+    alert('메시지 전송에 실패했습니다.')
+    chatInput.value = messageText // 실패 시 입력 복원
   }
 }
+
 
 const closeSurveyPopup = () => {
   showSurveyPopup.value = false
@@ -653,6 +1049,45 @@ const acceptSurvey = () => {
 const declineSurvey = () => {
   showSurveyPopup.value = false
   console.log('사용자가 설문을 거부했습니다.')
+}
+
+// 새싹 개수 로드
+const loadSproutCount = async (userId: string) => {
+  try {
+    sproutCount.value = await getSproutCount(userId)
+    console.log('✅ 새싹 개수 로드 완료:', sproutCount.value)
+  } catch (error) {
+    console.error('❌ 새싹 개수 로드 실패:', error)
+    sproutCount.value = 0
+  }
+}
+
+// 상점 아이템 구매
+const buyItem = async (item: { id: number; name: string; price: number }) => {
+  if (sproutCount.value < item.price) {
+    alert(`보유 새싹이 부족합니다.\n보유: ${sproutCount.value}개\n필요: ${item.price}개`)
+    return
+  }
+
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
+    alert('사용자 정보를 확인할 수 없습니다.')
+    return
+  }
+
+  if (!confirm(`${item.name}을(를) 구매하시겠습니까?\n🌱 ${item.price}개 차감`)) {
+    return
+  }
+
+  try {
+    const result = await spendSprouts(userId, item.price)
+    sproutCount.value = result.sproutCount
+    alert(`✅ ${item.name} 구매 완료!\n남은 새싹: ${sproutCount.value}개`)
+    console.log('✅ 아이템 구매 완료:', item.name, '남은 새싹:', sproutCount.value)
+  } catch (error: any) {
+    console.error('❌ 아이템 구매 실패:', error)
+    alert(error.message || '구매에 실패했습니다.')
+  }
 }
 
 const closeShopPopup = () => {

@@ -2,12 +2,21 @@
   <section>
     <div class="flex justify-between items-center mb-6">
       <h2 class="text-2xl font-semibold text-text-main font-gowun">사용자 리스트</h2>
-      <AppButton @click="showAddUser = true">
-        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
-        </svg>
-        사용자 추가
-      </AppButton>
+      <div class="flex gap-3">
+        <AppButton variant="outline" @click="showLocationMap = true">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+          </svg>
+          실시간 위치 보기
+        </AppButton>
+        <AppButton @click="showAddUser = true">
+          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+          </svg>
+          사용자 추가
+        </AppButton>
+      </div>
     </div>
     
     <div v-if="loading" class="text-center py-12">
@@ -28,6 +37,7 @@
         v-for="user in users"
         :key="user.id"
         :user="user"
+        :userLocation="userLocations[user.id]"
         @open="openUser(user.id)"
         @delete="confirmDelete(user)"
       />
@@ -40,6 +50,11 @@
       @confirm="handleDelete"
       @cancel="deleteDialog.open = false"
     />
+
+    <!-- 실시간 위치 보기 모달 -->
+    <AppModal :open="showLocationMap" title="전체 사용자 실시간 위치" @close="showLocationMap = false" :wide="true">
+      <GuardianAllUsersMap :users="users" />
+    </AppModal>
 
     <!-- 사용자 추가 모달 -->
     <AppModal :open="showAddUser" title="사용자 추가" @close="closeAddUser">
@@ -229,11 +244,14 @@
 </template>
 
 <script setup lang="ts">
-import { onMounted, computed, reactive, ref } from 'vue'
+import { onMounted, onBeforeUnmount, computed, reactive, ref } from 'vue'
 import { useRouter } from 'vue-router'
 import { useUsersStore } from '@/stores/users.store'
 import { checkUserCode } from '@/services/api/users'
+import { getAllLocations } from '@/services/api/locations'
+import type { LocationDto } from '@/services/api/locations'
 import UserListItem from '@/components/user/UserListItem.vue'
+import GuardianAllUsersMap from '@/components/map/GuardianAllUsersMap.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppModal from '@/components/common/AppModal.vue'
@@ -254,9 +272,12 @@ const deleteDialog = reactive({
 })
 
 const showAddUser = ref(false)
+const showLocationMap = ref(false)
 const addLoading = ref(false)
 const codeError = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
+const userLocations = ref<Record<string, { lat: number; lng: number } | null>>({})
+let locationUpdateInterval: number | null = null
 const newUser = reactive({
   userCode: '',
   name: '',
@@ -344,8 +365,49 @@ const loadUsers = () => {
   usersStore.fetchList()
 }
 
-onMounted(() => {
-  loadUsers()
+// 위치 정보 업데이트 함수
+const updateUserLocations = async () => {
+  try {
+    const locations = await getAllLocations()
+    
+    // 모든 사용자에 대해 위치 정보 초기화
+    const newLocations: Record<string, { lat: number; lng: number } | null> = {}
+    users.value.forEach(user => {
+      newLocations[user.id] = null
+    })
+    
+    // 위치 데이터 매핑
+    locations.forEach((location: LocationDto) => {
+      const userId = String(location.userId)
+      const user = users.value.find(u => String(u.id) === userId)
+      if (user) {
+        newLocations[user.id] = {
+          lat: location.latitude,
+          lng: location.longitude
+        }
+      }
+    })
+    
+    userLocations.value = newLocations
+  } catch (error) {
+    console.error('위치 정보 업데이트 실패:', error)
+  }
+}
+
+onMounted(async () => {
+  await loadUsers()
+  
+  // 초기 위치 로드
+  await updateUserLocations()
+  
+  // 주기적으로 위치 업데이트 (5초마다)
+  locationUpdateInterval = window.setInterval(updateUserLocations, 5000)
+})
+
+onBeforeUnmount(() => {
+  if (locationUpdateInterval) {
+    clearInterval(locationUpdateInterval)
+  }
 })
 
 const openUser = (id: string) => {
