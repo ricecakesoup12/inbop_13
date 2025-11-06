@@ -4,7 +4,10 @@ import { fileURLToPath } from 'url'
 
 export default defineConfig({
   plugins: [vue()],
-  server: { port: 5173 },
+  server: { 
+    host: 'localhost',
+    port: 5173 
+  },
   resolve: {
     alias: {
       '@': fileURLToPath(new URL('./src', import.meta.url)),

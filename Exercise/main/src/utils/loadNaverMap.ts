@@ -46,9 +46,18 @@ export function loadNaverMap(clientId: string, submodules = "geocoder"): Promise
       return;
     }
     
-    // 새 스크립트 생성
+    // 인증 실패 콜백 함수 등록 (전역)
+    (window as any).navermap_authFailure = function () {
+      console.error('❌ 네이버 지도 API 인증 실패 (navermap_authFailure 콜백 호출)');
+      console.error('클라이언트 ID와 서비스 URL을 확인해주세요.');
+      loading = false;
+      loaded = false;
+      loadPromise = null;
+    };
+    
+    // 새 스크립트 생성 (신규 API: ncpKeyId 사용)
     const script = document.createElement("script");
-    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpClientId=${clientId}&submodules=${submodules}`;
+    script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}&submodules=${submodules}`;
     script.async = true;
     
     console.log('네이버 지도 스크립트 로드 시작:', script.src);
@@ -103,7 +112,14 @@ export function loadNaverMap(clientId: string, submodules = "geocoder"): Promise
     document.head.appendChild(script);
   });
   
-  return loadPromise;
+  return loadPromise.then(() => {
+    // 스크립트 로드 후 최종 검증
+    if (!('naver' in window) || !(window as any).naver?.maps) {
+      console.error('❌ 네이버 지도 인증 실패 또는 API 미초기화');
+      throw new Error('NAVER_MAPS_AUTH_FAILED');
+    }
+    return Promise.resolve();
+  });
 }
 
 

@@ -15,9 +15,6 @@
         <span class="text-sm text-text-sub font-gowun">
           {{ isTracking ? '위치 추적 중' : '위치 추적 대기 중' }}
         </span>
-        <span class="text-xs text-gray-400 font-gowun ml-auto">
-          {{ otherUsersCount }}명의 다른 사용자
-        </span>
       </div>
 
       <!-- 지도 -->
@@ -37,70 +34,241 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, ref } from 'vue';
 import { loadNaverMap } from '@/utils/loadNaverMap';
-import { upsertLocation, getAllLocations } from '@/services/api/locations';
+import { upsertLocation } from '@/services/api/locations';
 
 const NAVER_ID = import.meta.env.VITE_NAVER_CLIENT_ID as string;
 
 const map = ref<any>(null);
 const myMarker = ref<any>(null);
-const otherMarkers = ref<Map<string, any>>(new Map());
 const isTracking = ref(false);
 const currentPosition = ref<{ latitude: number; longitude: number } | null>(null);
 const currentAddress = ref<string | null>(null);
-const otherUsersCount = ref(0);
 let watchId: number | null = null;
 let sendLocationInterval: number | null = null;
-let fetchLocationsInterval: number | null = null;
 let userId: string | null = null;
+
+// 역지오코딩 제어를 위한 변수
+let lastGeocodePosition: { latitude: number; longitude: number } | null = null;
+const MIN_DISTANCE_METERS = 50; // 50m 이상 이동 시에만 역지오코딩
+
+// 두 좌표 간 거리 계산 (미터 단위) - Haversine 공식
+const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+  const R = 6371000; // 지구 반지름 (미터)
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c;
+};
 
 // OSM Nominatim Fallback (비인증, 도로명 유사 주소)
 const fallbackReverseGeocode = async (latitude: number, longitude: number): Promise<string | null> => {
   try {
-    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ko`;
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ko&addressdetails=1`;
     const res = await fetch(url, { headers: { 'User-Agent': 'inbop-app/1.0 (educational)' } });
     if (!res.ok) return null;
     const data = await res.json();
-    return data.display_name || null;
-  } catch {
+    
+    // 한국어 주소 우선 구성
+    if (data.address) {
+      const addr = data.address;
+      console.log('📍 OSM 주소 데이터:', addr);
+      
+      // 한국 주소 형식: 시/도 시/군/구 동/면/읍 도로명 건물번호
+      const parts: string[] = [];
+      
+      // 시/도
+      if (addr.state || addr.region) {
+        parts.push(addr.state || addr.region);
+      }
+      // 시/군/구
+      if (addr.city || addr.county || addr.district) {
+        parts.push(addr.city || addr.county || addr.district);
+      }
+      // 동/면/읍
+      if (addr.town || addr.village || addr.neighbourhood || addr.suburb) {
+        parts.push(addr.town || addr.village || addr.neighbourhood || addr.suburb);
+      }
+      // 도로명
+      if (addr.road) {
+        parts.push(addr.road);
+      }
+      // 건물 번호
+      if (addr.house_number) {
+        parts.push(addr.house_number + '번');
+      }
+      
+      if (parts.length > 0) {
+        const koreanAddress = parts.join(' ');
+        console.log('📍 현재 주소 (OSM 한국어):', koreanAddress);
+        return koreanAddress;
+      }
+    }
+    
+    // fallback: display_name 사용
+    const displayName = data.display_name || null;
+    if (displayName) {
+      console.log('📍 현재 주소 (OSM 원본):', displayName);
+      // 영어 주소를 한국어로 변환 시도 (간단한 파싱)
+      const koreanParts = displayName.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      if (koreanParts.length >= 2) {
+        // 마지막 2-3개 부분만 사용 (상세 주소)
+        return koreanParts.slice(-3).join(' ');
+      }
+      return displayName;
+    }
+    
+    return null;
+  } catch (error) {
+    console.error('OSM Reverse Geocoding 오류:', error);
     return null;
   }
 };
 
 // Reverse Geocoding: 좌표를 주소로 변환 (도로명 주소 우선)
 const reverseGeocode = async (latitude: number, longitude: number): Promise<string | null> => {
+  // 좌표 유효성 검사
+  if (!isFinite(latitude) || !isFinite(longitude)) {
+    console.error('❌ 잘못된 좌표:', latitude, longitude);
+    return await fallbackReverseGeocode(latitude, longitude);
+  }
+
   try {
     const nmaps = (window as any).naver?.maps;
     
     if (!nmaps || !nmaps.Service) {
-      console.error('네이버 지도 Service가 로드되지 않았습니다. (인증 실패 가능)');
-      return null;
+      console.warn('⚠️ 네이버 지도 Service가 로드되지 않았습니다. → OSM Fallback 시도');
+      return await fallbackReverseGeocode(latitude, longitude);
     }
     
     // 역지오코딩 기능이 비활성(인증 실패 등)인 경우 바로 중단
     if (typeof nmaps.Service.reverseGeocode !== 'function') {
-      console.warn('reverseGeocode 사용 불가: 인증 실패 또는 권한 미설정 → OSM Fallback 시도');
+      console.warn('⚠️ reverseGeocode 사용 불가: 인증 실패 또는 권한 미설정 → OSM Fallback 시도');
       return await fallbackReverseGeocode(latitude, longitude);
     }
 
+    console.log('🔍 네이버 Reverse Geocoding 시도:', latitude, longitude);
+
     return new Promise((resolve) => {
-      nmaps.Service.reverseGeocode(
-        { coords: new nmaps.LatLng(latitude, longitude) },
-        (status: any, response: any) => {
-          if (status === nmaps.Service.Status.OK && response.v2.addresses.length > 0) {
-            const address = response.v2.addresses[0];
-            // 도로명 주소를 우선적으로 사용, 없으면 지번 주소 사용
-            const result = address.roadAddress || address.jibunAddress;
-            console.log('주소 변환 성공:', result);
-            resolve(result);
-          } else {
-            console.warn('주소 변환 실패:', status, '→ OSM Fallback 시도');
-            fallbackReverseGeocode(latitude, longitude).then(resolve);
-          }
+      try {
+        const latlng = new nmaps.LatLng(latitude, longitude);
+        const reverseGeocodeOptions: any = {
+          coords: latlng,
+          orders: 'roadaddr,addr',
+          lang: 'ko'
+        };
+
+        // coordType 상수가 존재하는 환경에서만 설정 (방어 코드)
+        if (nmaps?.Service?.CoordType?.LAT_LNG) {
+          reverseGeocodeOptions.coordType = nmaps.Service.CoordType.LAT_LNG;
+        } else if (nmaps?.Service?.CoordType?.NAVER) {
+          // LAT_LNG 상수가 없는 구버전 SDK 대비
+          reverseGeocodeOptions.coordType = nmaps.Service.CoordType.NAVER;
         }
-      );
+
+        nmaps.Service.reverseGeocode(
+          reverseGeocodeOptions,
+          (status: any, response: any) => {
+            // 상세 디버깅 로그
+            console.log('🔍 네이버 API 응답:', {
+              status,
+              statusType: typeof status,
+              statusOK: nmaps.Service.Status.OK,
+              statusOKType: typeof nmaps.Service.Status.OK,
+              statusMatch: status === nmaps.Service.Status.OK,
+              hasResponse: !!response,
+              responseKeys: response ? Object.keys(response) : [],
+              hasV2: !!response?.v2,
+              v2Keys: response?.v2 ? Object.keys(response.v2) : [],
+              addressesCount: response?.v2?.addresses?.length || 0,
+              fullResponse: response
+            });
+            
+            // 전체 응답 JSON 출력
+            try {
+              console.log('📦 네이버 API 응답 JSON:', JSON.stringify(response, null, 2));
+            } catch (e) {
+              console.log('📦 네이버 API 응답 (stringify 실패):', response);
+            }
+
+            // Status.OK 확인 (문자열/숫자 모두 체크)
+            const isOK = status === nmaps.Service.Status.OK || 
+                        status === 0 || 
+                        (typeof status === 'string' && status.toLowerCase() === 'ok');
+            
+            if (isOK && response?.v2) {
+              const v2: any = response.v2;
+              
+              // 1) v2.address 우선 (신규 스펙)
+              const direct = v2.address?.roadAddress || v2.address?.jibunAddress;
+              if (direct) {
+                console.log('✅ 네이버 주소 변환 성공(v2.address):', direct);
+                resolve(direct);
+                return;
+              }
+              
+              // 2) v2.results 파싱 (roadaddr 우선)
+              if (Array.isArray(v2.results) && v2.results.length > 0) {
+                const preferred = v2.results.find((r: any) => r.name === 'roadaddr') || v2.results[0];
+                const region = preferred.region || {};
+                const land = preferred.land || {};
+                const parts: string[] = [];
+                if (region.area1?.name) parts.push(region.area1.name);
+                if (region.area2?.name) parts.push(region.area2.name);
+                if (region.area3?.name) parts.push(region.area3.name);
+                if (preferred.name === 'roadaddr' && land.name) {
+                  parts.push(land.name);
+                  if (land.number1) parts.push(land.number1 + (land.number2 ? '-' + land.number2 : ''));
+                }
+                if (land.addition0?.type === 'building' && land.addition0?.value) parts.push(land.addition0.value);
+                const joined = parts.filter(Boolean).join(' ');
+                if (joined) {
+                  console.log('✅ 네이버 주소 변환 성공(v2.results):', joined);
+                  resolve(joined);
+                  return;
+                }
+              }
+              
+              // 3) 구형 스펙: v2.addresses
+              if (Array.isArray(v2.addresses) && v2.addresses.length > 0) {
+                const address = v2.addresses[0];
+                console.log('📍 네이버 주소 객체(v2.addresses[0]):', address);
+                const result = address.roadAddress || address.jibunAddress || address.address;
+                if (result) {
+                  console.log('✅ 네이버 주소 변환 성공(v2.addresses):', result);
+                  resolve(result);
+                  return;
+                }
+              }
+              
+              console.warn('⚠️ 네이버 주소 변환 실패: v2.address/v2.results/v2.addresses 모두 사용 불가');
+              console.warn('응답 상세:', response);
+              fallbackReverseGeocode(latitude, longitude).then(resolve);
+            } else {
+              // 실패 원인 분석
+              let errorMsg = '→ OSM Fallback 시도';
+              if (!isOK) {
+                errorMsg = `Status가 OK가 아님 (${status})`;
+              } else if (!response?.v2) {
+                errorMsg = 'response.v2가 없음';
+              }
+              
+              console.warn('⚠️ 네이버 주소 변환 실패:', errorMsg);
+              console.warn('응답 상세:', response);
+              fallbackReverseGeocode(latitude, longitude).then(resolve);
+            }
+          }
+        );
+      } catch (error: any) {
+        console.error('❌ 네이버 Reverse Geocoding 호출 오류:', error);
+        fallbackReverseGeocode(latitude, longitude).then(resolve);
+      }
     });
   } catch (error) {
-    console.error('Reverse Geocoding 실패:', error);
+    console.error('❌ Reverse Geocoding 전체 실패:', error);
     // 네이버 실패 시 OSM로 재시도
     return await fallbackReverseGeocode(latitude, longitude);
   }
@@ -113,84 +281,35 @@ const sendMyLocation = async (latitude: number, longitude: number) => {
   }
   
   if (!userId) {
-    console.warn('사용자 ID가 없습니다.');
+    console.warn('⚠️ 사용자 ID가 없습니다. localStorage:', localStorage.getItem('userId'), 'env:', import.meta.env.VITE_USER_ID);
     return;
   }
 
+  // userId를 문자열로 변환하여 일관성 보장
+  const userIdStr = String(userId);
+  
   try {
-    await upsertLocation(userId, {
+    console.log('📍 위치 전송 시도:', { userId: userIdStr, latitude, longitude });
+    await upsertLocation(userIdStr, {
       latitude,
       longitude,
       timestamp: Date.now()
     });
-    console.log('위치 전송 완료:', latitude, longitude);
+    console.log('✅ 위치 전송 완료:', userIdStr, latitude, longitude);
   } catch (error) {
-    console.error('위치 전송 실패:', error);
+    console.error('❌ 위치 전송 실패:', error, { userId: userIdStr });
   }
 };
 
-// 다른 사용자들의 위치를 가져와서 마커 표시
-const fetchAndDisplayOtherUsers = async () => {
-  try {
-    const locations = await getAllLocations();
-    
-    if (!map.value || !userId) {
-      userId = localStorage.getItem('userId') || import.meta.env.VITE_USER_ID;
-      if (!userId) return;
-    }
-
-    const nmaps = (window as any).naver.maps;
-    
-    // 내 위치를 제외한 다른 사용자들만 표시
-    const otherLocations = locations.filter(loc => loc.userId !== userId);
-    otherUsersCount.value = otherLocations.length;
-
-    // 기존 마커 제거 (삭제된 사용자들)
-    otherMarkers.value.forEach((marker, key) => {
-      if (!otherLocations.find(loc => loc.userId === key)) {
-        marker.setMap(null);
-        otherMarkers.value.delete(key);
-      }
-    });
-
-    // 새 마커 추가 또는 위치 업데이트
-    otherLocations.forEach((location) => {
-      const latlng = new nmaps.LatLng(location.latitude, location.longitude);
-      
-      if (otherMarkers.value.has(location.userId)) {
-        // 기존 마커 위치 업데이트
-        otherMarkers.value.get(location.userId).setPosition(latlng);
-      } else {
-        // 새 마커 생성 (파란색)
-        const marker = new nmaps.Marker({
-          position: latlng,
-          map: map.value,
-          icon: {
-            content: `<div style="background: #4ECDC4; width: 20px; height: 20px; border-radius: 50%; border: 3px solid white; box-shadow: 0 2px 4px rgba(0,0,0,0.3);"></div>`,
-            anchor: new nmaps.Point(10, 10)
-          },
-          title: location.userId
-        });
-        
-        // 정보창 추가
-        const infoWindow = new nmaps.InfoWindow({
-          content: `<div style="padding: 8px; font-size: 12px;">${location.userId}</div>`
-        });
-        
-        marker.addListener('click', () => {
-          infoWindow.open(map.value, marker);
-        });
-        
-        otherMarkers.value.set(location.userId, marker);
-      }
-    });
-  } catch (error) {
-    console.error('위치 조회 실패:', error);
-  }
-};
+// 사용자는 자기 위치만 볼 수 있음 (다른 사용자 위치 표시 기능 제거)
 
 onMounted(async () => {
   userId = localStorage.getItem('userId') || import.meta.env.VITE_USER_ID;
+  
+  // 디버깅: userId 확인
+  console.log('=== LiveMap 초기화 ===');
+  console.log('userId:', userId, '(타입:', typeof userId, ')');
+  console.log('localStorage userId:', localStorage.getItem('userId'));
 
   // 1. 클라이언트 ID 확인
   if (!NAVER_ID || NAVER_ID === '여기에_네이버_클라이언트ID_입력' || NAVER_ID.trim() === '') {
@@ -208,43 +327,60 @@ onMounted(async () => {
     
     console.log('✅ 네이버 지도 스크립트 로드 완료');
     
-    // 3. naver.maps 객체 재확인 (추가 안전 장치)
-    let nmaps = (window as any).naver?.maps;
-    
-    if (!nmaps) {
-      console.warn('⚠️ naver.maps가 즉시 로드되지 않음. 재시도 중...');
-      
-      // 최대 3초 동안 0.1초마다 확인
-      let retryCount = 0;
-      while (!nmaps && retryCount < 30) {
-        await new Promise(resolve => setTimeout(resolve, 100));
-        nmaps = (window as any).naver?.maps;
-        retryCount++;
+    // 3. naver.maps 객체 최종 검증 (인증 실패 시 null일 수 있음)
+    if (!('naver' in window) || !(window as any).naver?.maps) {
+      console.error('❌ 네이버 지도 인증 실패: 클라이언트ID/서비스URL을 확인하세요.');
+      const mapElement = document.getElementById('map');
+      if (mapElement) {
+        mapElement.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; padding: 20px;">
+            <p style="color: #666; font-size: 14px; font-weight: 600;">⚠️ 네이버 지도 API 인증 실패</p>
+            <p style="color: #999; font-size: 12px; text-align: center; line-height: 1.6;">
+              네이버 클라우드 플랫폼에서 다음을 확인해주세요:<br/>
+              • 서비스 URL 등록: http://localhost:5173<br/>
+              • Web Dynamic Map 활성화<br/>
+              • 클라이언트 ID 확인
+            </p>
+          </div>
+        `;
       }
-      
-      if (!nmaps) {
-        throw new Error('네이버 지도 객체가 로드되지 않았습니다. 페이지를 새로고침해주세요.');
-      }
-      
-      console.log('✅ 재시도 후 네이버 지도 로드 성공 (시도 횟수:', retryCount + ')');
+      return;
     }
+
+    const nmaps = (window as any).naver.maps;
     
     console.log('✅ 네이버 지도 API 초기화 완료!');
 
-    // 4. 지도 생성 (기본 위치: 서울 시청)
+    // 4. 지도 생성 (안전하게)
     const mapElement = document.getElementById('map');
     if (!mapElement) {
       throw new Error('지도 컨테이너를 찾을 수 없습니다.');
     }
     
-    map.value = new nmaps.Map(mapElement, {
-      center: new nmaps.LatLng(37.5665, 126.9780),
-      zoom: 15,
-      zoomControl: true,
-      zoomControlOptions: {
-        position: nmaps.Position.TOP_RIGHT
+    try {
+      if (!nmaps || !nmaps.Map || !nmaps.LatLng) {
+        throw new Error('네이버 지도 API 객체가 완전히 초기화되지 않았습니다.');
       }
-    });
+      
+      map.value = new nmaps.Map(mapElement, {
+        center: new nmaps.LatLng(37.5665, 126.9780),
+        zoom: 15,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: nmaps.Position.TOP_RIGHT
+        }
+      });
+    } catch (mapError: any) {
+      console.error('❌ 지도 생성 실패:', mapError);
+      const errorMsg = mapError?.message || '지도를 초기화할 수 없습니다.';
+      mapElement.innerHTML = `
+        <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; padding: 20px;">
+          <p style="color: #666; font-size: 14px; font-weight: 600;">⚠️ 지도 초기화 실패</p>
+          <p style="color: #999; font-size: 12px;">${errorMsg}</p>
+        </div>
+      `;
+      return;
+    }
     
     console.log('✅ 지도 생성 완료');
 
@@ -260,10 +396,7 @@ onMounted(async () => {
     
     console.log('✅ 마커 생성 완료');
 
-    // 6. 초기 위치 로드
-    fetchAndDisplayOtherUsers();
-
-    // 7. 위치 추적 시작
+    // 6. 위치 추적 시작
     if ('geolocation' in navigator) {
       watchId = navigator.geolocation.watchPosition(
         async (pos) => {
@@ -280,16 +413,53 @@ onMounted(async () => {
           
           console.log('📍 현재 위치:', latitude, longitude);
 
-          // Reverse Geocoding으로 도로명 주소 가져오기
-          setTimeout(async () => {
-            const address = await reverseGeocode(latitude, longitude);
-            if (address) {
-              currentAddress.value = address;
-              console.log('📍 현재 주소:', address);
+          // 역지오코딩 호출 여부 결정 (50m 이상 이동했을 때만)
+          let shouldGeocode = false;
+          
+          if (!lastGeocodePosition) {
+            // 최초 한 번은 무조건 호출
+            shouldGeocode = true;
+            console.log('📍 최초 위치이므로 주소를 가져옵니다.');
+          } else {
+            // 이전 위치와의 거리 계산
+            const distance = calculateDistance(
+              lastGeocodePosition.latitude,
+              lastGeocodePosition.longitude,
+              latitude,
+              longitude
+            );
+            
+            console.log(`📍 이동 거리: ${distance.toFixed(2)}m`);
+            
+            // 50m 이상 이동했을 때만 역지오코딩
+            if (distance >= MIN_DISTANCE_METERS) {
+              shouldGeocode = true;
+              console.log(`📍 ${distance.toFixed(2)}m 이동했으므로 주소를 다시 가져옵니다.`);
             } else {
-              console.warn('주소를 가져올 수 없습니다.');
+              console.log(`📍 ${distance.toFixed(2)}m 이동 (50m 미만)이므로 주소를 다시 가져오지 않습니다.`);
             }
-          }, 500);
+          }
+          
+          // 역지오코딩 호출 (50m 이상 이동했을 때만)
+          if (shouldGeocode) {
+            lastGeocodePosition = { latitude, longitude };
+            
+            setTimeout(async () => {
+              try {
+                const address = await reverseGeocode(latitude, longitude);
+                if (address) {
+                  currentAddress.value = address;
+                  console.log('✅ 현재 주소:', address);
+                } else {
+                  console.warn('⚠️ 주소를 가져올 수 없습니다.');
+                  currentAddress.value = null;
+                }
+              } catch (error) {
+                console.error('❌ 주소 변환 오류:', error);
+                currentAddress.value = null;
+              }
+            }, 500);
+          }
         },
         (err) => {
           console.warn('위치 접근 오류:', err);
@@ -306,38 +476,49 @@ onMounted(async () => {
       alert('이 브라우저는 위치 서비스를 지원하지 않습니다.');
     }
 
-    // 8. 주기적으로 내 위치 전송 (10초마다)
+    // 7. 주기적으로 내 위치 전송 (10초마다)
     sendLocationInterval = window.setInterval(() => {
       if (currentPosition.value && userId) {
         sendMyLocation(currentPosition.value.latitude, currentPosition.value.longitude);
       }
     }, 10000);
-
-    // 9. 주기적으로 다른 사용자 위치 가져오기 (5초마다)
-    fetchLocationsInterval = window.setInterval(() => {
-      fetchAndDisplayOtherUsers();
-    }, 5000);
     
-    console.log('✅ 실시간 위치 추적 시작!');
+    console.log('✅ 실시간 위치 추적 시작! (본인 위치만 표시)');
 
   } catch (error: any) {
     console.error('❌ 지도 로드 실패:', error);
     
     let errorMessage = '지도를 불러오는데 실패했습니다.';
+    let isAuthError = false;
     
-    if (error?.message) {
+    // 인증 실패 관련 에러 체크
+    if (error?.message?.includes('인증') || 
+        error?.message?.includes('authentication') ||
+        error?.message?.includes('unauthorized') ||
+        error?.message?.includes('client') ||
+        (window as any).naver?.maps?.Service?.Status?.ERROR === 'ERROR') {
+      isAuthError = true;
+      errorMessage = '네이버 지도 API 인증에 실패했습니다.';
+    } else if (error?.message) {
       errorMessage = error.message;
     } else if (error?.toString) {
       errorMessage = error.toString();
     }
     
     // 상세한 안내 메시지
-    const fullMessage = `❌ ${errorMessage}\n\n📋 해결 방법:\n\n1️⃣ Exercise/main/.env 파일에 다음 내용 추가:\nVITE_NAVER_CLIENT_ID=발급받은_클라이언트ID\n\n2️⃣ 네이버 클라우드 플랫폼(console.naver.com/ncloud/application):\n  - Maps > Application\n  - 서비스 URL에 다음 추가:\n    http://localhost:5173/*\n    http://localhost:5174/*\n\n3️⃣ 개발 서버 재시작:\n  터미널에서 Ctrl+C 후 npm run dev\n\n4️⃣ 브라우저 캐시 삭제:\n  Ctrl+Shift+R 또는 Cmd+Shift+R\n\n5️⃣ 브라우저 콘솔(F12) 확인하여 에러 메시지 확인`;
+    let fullMessage = '';
+    if (isAuthError) {
+      fullMessage = `❌ 네이버 지도 API 인증 실패\n\n📋 해결 방법:\n\n1️⃣ Exercise/main/.env 파일 확인:\n   VITE_NAVER_CLIENT_ID=발급받은_클라이언트ID\n   (올바른 클라이언트 ID인지 확인)\n\n2️⃣ 네이버 클라우드 플랫폼 확인:\n   https://console.naver.com/ncloud/application\n   - Maps > Application 선택\n   - 서비스 환경: Web Dynamic Map\n   - 서비스 URL에 다음이 등록되어 있는지 확인:\n     http://localhost:5173/*\n     http://localhost:5174/*\n     http://127.0.0.1:5173/*\n     http://127.0.0.1:5174/*\n\n3️⃣ 개발 서버 재시작:\n   터미널에서 Ctrl+C 후 npm run dev\n\n4️⃣ 브라우저 캐시 삭제 후 새로고침:\n   Ctrl+Shift+R (Windows) 또는 Cmd+Shift+R (Mac)\n\n💡 인증 실패는 보통:\n   - 잘못된 클라이언트 ID\n   - 서비스 URL 미등록\n   - 서버 재시작 필요\n   - 브라우저 캐시 문제\n   중 하나입니다.`;
+    } else {
+      fullMessage = `❌ ${errorMessage}\n\n📋 해결 방법:\n\n1️⃣ Exercise/main/.env 파일에 다음 내용 추가:\nVITE_NAVER_CLIENT_ID=발급받은_클라이언트ID\n\n2️⃣ 네이버 클라우드 플랫폼(console.naver.com/ncloud/application):\n  - Maps > Application\n  - 서비스 URL에 다음 추가:\n    http://localhost:5173/*\n    http://localhost:5174/*\n\n3️⃣ 개발 서버 재시작:\n  터미널에서 Ctrl+C 후 npm run dev\n\n4️⃣ 브라우저 캐시 삭제:\n  Ctrl+Shift+R 또는 Cmd+Shift+R\n\n5️⃣ 브라우저 콘솔(F12) 확인하여 에러 메시지 확인`;
+    }
     
     alert(fullMessage);
     console.error('🔍 전체 에러 정보:', error);
     console.error('🔍 현재 window.naver:', (window as any).naver);
     console.error('🔍 현재 NAVER_ID:', NAVER_ID);
+    console.error('🔍 NAVER_ID 길이:', NAVER_ID?.length);
+    console.error('🔍 NAVER_ID 첫 10자:', NAVER_ID?.substring(0, 10));
   }
 });
 
@@ -347,9 +528,6 @@ onBeforeUnmount(() => {
   }
   if (sendLocationInterval !== null) {
     clearInterval(sendLocationInterval);
-  }
-  if (fetchLocationsInterval !== null) {
-    clearInterval(fetchLocationsInterval);
   }
 });
 </script>

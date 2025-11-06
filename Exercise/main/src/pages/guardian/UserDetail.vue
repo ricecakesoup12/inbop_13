@@ -111,7 +111,197 @@
           📍 위도: {{ userLocation.lat.toFixed(4) }}, 경도: {{ userLocation.lng.toFixed(4) }}
         </div>
       </div>
-      <UserLocationMap :position="userLocation || user.position" />
+      <NaverUserLocationMap :position="userLocation || user.position" :userName="user.name" />
+    </div>
+
+    <!-- 대화창과 처방 칸 (2열 레이아웃) -->
+    <div class="grid md:grid-cols-2 gap-6">
+      <!-- 왼쪽: 대화창 -->
+      <AppCard>
+        <div class="p-6">
+          <h3 class="text-lg font-semibold text-text-main mb-4 font-gowun flex items-center gap-2">
+            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+            </svg>
+            대화창
+            <span class="text-xs text-gray-500 font-normal">({{ user.name }}님과의 대화)</span>
+          </h3>
+          
+          <!-- 채팅 메시지 목록 -->
+          <div class="h-80 border rounded-lg p-4 overflow-y-auto bg-gray-50 mb-4 space-y-3">
+            <div v-if="chatMessages.length === 0" class="text-center text-gray-400 font-gowun py-8">
+              아직 대화 내용이 없습니다
+            </div>
+            <div 
+              v-for="(chatMsg, index) in chatMessages" 
+              :key="index" 
+              :class="chatMsg.sender === 'guardian' ? 'text-right' : 'text-left'"
+            >
+              <div 
+                :class="[
+                  'inline-block max-w-[70%] rounded-lg p-3',
+                  chatMsg.sender === 'guardian' 
+                    ? 'bg-blue-500 text-white' 
+                    : 'bg-white text-gray-800 border border-gray-200'
+                ]"
+              >
+                <div class="text-xs opacity-75 mb-1 font-gowun">
+                  {{ chatMsg.senderName }}
+                </div>
+                <div class="text-sm font-gowun">
+                  {{ chatMsg.message }}
+                </div>
+                <div class="text-xs opacity-75 mt-1 font-gowun">
+                  {{ formatChatTime(chatMsg.timestamp) }}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 메시지 입력창 -->
+          <div class="flex gap-2">
+            <input
+              v-model="guardianChatInput"
+              @keyup.enter="sendGuardianMessage"
+              class="flex-1 border-2 border-gray-200 rounded-lg px-4 py-3 text-sm focus:border-primary outline-none font-gowun"
+              placeholder="메시지를 입력하세요..."
+            />
+            <AppButton @click="sendGuardianMessage" variant="solid" class="px-6">
+              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+              </svg>
+            </AppButton>
+          </div>
+        </div>
+      </AppCard>
+
+      <!-- 오른쪽: 운동 처방 칸 -->
+      <AppCard>
+        <div class="p-6">
+          <h3 class="text-lg font-semibold text-text-main mb-4 font-gowun flex items-center gap-2">
+            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
+            </svg>
+            운동 처방
+          </h3>
+
+          <form @submit.prevent="sendPrescription" class="space-y-4">
+            <!-- 시작 스트레칭 -->
+            <div>
+              <label class="block font-semibold mb-2 font-gowun text-sm">시작 스트레칭</label>
+              <div class="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  v-for="minutes in [5, 10, 15]"
+                  :key="minutes"
+                  @click="prescriptionForm.startStretchingMinutes = minutes"
+                  :class="[
+                    'flex-1 py-2 px-3 rounded-lg border-2 transition-colors font-gowun',
+                    prescriptionForm.startStretchingMinutes === minutes
+                      ? 'bg-green-500 text-white border-green-500'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-green-300'
+                  ]"
+                >
+                  {{ minutes }}분
+                </button>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-600 mb-1 font-gowun">URL (선택사항)</label>
+                <input
+                  v-model="prescriptionForm.startStretchingUrl"
+                  type="url"
+                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  placeholder="https://example.com/stretching"
+                />
+              </div>
+            </div>
+
+            <!-- 인터벌 운동 -->
+            <div class="space-y-3">
+              <label class="block font-semibold mb-2 font-gowun text-sm">인터벌 운동</label>
+              
+              <!-- 걷기 -->
+              <div>
+                <label class="block text-xs text-gray-600 mb-1 font-gowun">걷기 (분)</label>
+                <input
+                  v-model.number="prescriptionForm.walkingMinutes"
+                  type="number"
+                  min="1"
+                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  placeholder="걷기 시간 입력"
+                  required
+                />
+              </div>
+
+              <!-- 뛰기 -->
+              <div>
+                <label class="block text-xs text-gray-600 mb-1 font-gowun">뛰기 (분)</label>
+                <input
+                  v-model.number="prescriptionForm.runningMinutes"
+                  type="number"
+                  min="1"
+                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  placeholder="뛰기 시간 입력"
+                  required
+                />
+              </div>
+
+              <!-- 세트 수 -->
+              <div>
+                <label class="block text-xs text-gray-600 mb-1 font-gowun">세트 수</label>
+                <input
+                  v-model.number="prescriptionForm.sets"
+                  type="number"
+                  min="1"
+                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  placeholder="세트 수 입력"
+                  required
+                />
+              </div>
+            </div>
+
+            <!-- 마무리 스트레칭 -->
+            <div>
+              <label class="block font-semibold mb-2 font-gowun text-sm">마무리 스트레칭</label>
+              <div class="flex gap-2 mb-2">
+                <button
+                  type="button"
+                  v-for="minutes in [5, 10, 15]"
+                  :key="minutes"
+                  @click="prescriptionForm.endStretchingMinutes = minutes"
+                  :class="[
+                    'flex-1 py-2 px-3 rounded-lg border-2 transition-colors font-gowun',
+                    prescriptionForm.endStretchingMinutes === minutes
+                      ? 'bg-green-500 text-white border-green-500'
+                      : 'bg-white text-gray-700 border-gray-200 hover:border-green-300'
+                  ]"
+                >
+                  {{ minutes }}분
+                </button>
+              </div>
+              <div>
+                <label class="block text-xs text-gray-600 mb-1 font-gowun">URL (선택사항)</label>
+                <input
+                  v-model="prescriptionForm.endStretchingUrl"
+                  type="url"
+                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  placeholder="https://example.com/stretching"
+                />
+              </div>
+            </div>
+
+            <!-- 전송 버튼 -->
+            <AppButton
+              type="submit"
+              variant="solid"
+              class="w-full py-3 bg-green-600 hover:bg-green-700"
+              :disabled="prescriptionLoading"
+            >
+              {{ prescriptionLoading ? '전송 중...' : '처방 전송' }}
+            </AppButton>
+          </form>
+        </div>
+      </AppCard>
     </div>
 
     <!-- 트렌드 차트 -->
@@ -185,13 +375,15 @@ import { getUserWeightRecords } from '@/services/api/weightRecords'
 import { getExerciseStatus } from '@/services/api/exerciseStatus'
 import { getAllLocations } from '@/services/api/locations'
 import { updateUser } from '@/services/api/users'
+import { getChatMessages, sendChatMessage as sendChatAPI, type ChatMessage } from '@/services/api/chatMessages'
+import { createPrescription, type CreateExercisePrescriptionRequest } from '@/services/api/exercisePrescriptions'
 import type { WeightRecord } from '@/services/api/weightRecords'
 import type { ExerciseStatus } from '@/services/api/exerciseStatus'
 import type { LocationDto } from '@/services/api/locations'
 import AppCard from '@/components/common/AppCard.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppModal from '@/components/common/AppModal.vue'
-import UserLocationMap from '@/components/map/UserLocationMap.vue'
+import NaverUserLocationMap from '@/components/map/NaverUserLocationMap.vue'
 import UserVitalsNow from '@/components/user/UserVitalsNow.vue'
 import WeightTrendChart from '@/components/charts/WeightTrendChart.vue'
 import HeartRateTrendChart from '@/components/charts/HeartRateTrendChart.vue'
@@ -214,6 +406,23 @@ const weightRecords = ref<WeightRecord[]>([])
 const exerciseStatus = ref<ExerciseStatus | null>(null)
 const userLocation = ref<{ lat: number; lng: number } | null>(null)
 let locationUpdateInterval: number | null = null
+
+// 채팅 관련
+const chatMessages = ref<ChatMessage[]>([])
+const guardianChatInput = ref('')
+let chatUpdateInterval: number | null = null
+
+// 처방 관련
+const prescriptionForm = reactive({
+  startStretchingMinutes: 5,
+  startStretchingUrl: '',
+  walkingMinutes: 0,
+  runningMinutes: 0,
+  sets: 0,
+  endStretchingMinutes: 5,
+  endStretchingUrl: ''
+})
+const prescriptionLoading = ref(false)
 
 // 수정 모달
 const showEditModal = ref(false)
@@ -290,12 +499,36 @@ onMounted(async () => {
   const updateUserLocation = async () => {
     try {
       const locations = await getAllLocations()
-      const location = locations.find((loc: LocationDto) => loc.userId === id)
+      
+      // 사용자 ID 결정: user.value.id가 있으면 우선 사용, 없으면 route param 사용
+      const targetUserId = user.value?.id ? String(user.value.id) : String(id)
+      
+      // 디버깅: 위치 데이터 확인
+      console.log('=== 위치 조회 디버깅 ===')
+      console.log('Route param ID:', id, '(타입:', typeof id, ')')
+      console.log('사용자 정보 ID:', user.value?.id, '(타입:', typeof user.value?.id, ')')
+      console.log('최종 사용할 ID:', targetUserId)
+      console.log('전체 위치 데이터:', locations)
+      console.log('사용자 정보:', user.value)
+      
+      // userId를 문자열로 변환하여 비교 (타입 일치 보장)
+      const location = locations.find((loc: LocationDto) => {
+        const locUserId = String(loc.userId)
+        const matches = locUserId === targetUserId
+        console.log('비교:', locUserId, '===', targetUserId, '→', matches)
+        return matches
+      })
+      
       if (location) {
+        console.log('✅ 위치 찾음:', location)
         userLocation.value = {
           lat: location.latitude,
           lng: location.longitude
         }
+      } else {
+        console.warn('⚠️ 위치를 찾을 수 없음. 사용자 ID:', id, '전체 위치:', locations.map(l => ({ userId: l.userId, userIdType: typeof l.userId })))
+        // 위치가 없으면 null로 설정 (기존 user.position 사용)
+        userLocation.value = null
       }
     } catch (error) {
       console.error('위치 업데이트 실패:', error)
@@ -307,11 +540,138 @@ onMounted(async () => {
   
   // 주기적 위치 업데이트
   locationUpdateInterval = window.setInterval(updateUserLocation, 5000)
+
+  // 채팅 메시지 초기 로드 (에러 발생 시에도 계속 진행)
+  try {
+    await loadChatMessages()
+    // 주기적 채팅 메시지 업데이트
+    startChatUpdate()
+  } catch (error) {
+    console.warn('⚠️ 채팅 메시지 로드 실패 (무시하고 계속):', error)
+  }
 })
+
+// 채팅 메시지 로드
+const loadChatMessages = async () => {
+  try {
+    chatMessages.value = await getChatMessages(id)
+    console.log('✅ 채팅 메시지 로드 완료:', chatMessages.value.length, '개')
+  } catch (error) {
+    console.error('❌ 채팅 메시지 로드 실패:', error)
+  }
+}
+
+// 보호자 메시지 전송
+const sendGuardianMessage = async () => {
+  if (!guardianChatInput.value.trim()) return
+
+  const messageText = guardianChatInput.value
+  guardianChatInput.value = ''
+
+  try {
+    const newMessage = await sendChatAPI({
+      userId: id,
+      sender: 'guardian',
+      senderName: '운동 선생님',
+      message: messageText
+    })
+
+    chatMessages.value.push(newMessage)
+    console.log('✅ 보호자 메시지 전송 완료:', newMessage)
+  } catch (error) {
+    console.error('❌ 메시지 전송 실패:', error)
+    alert('메시지 전송에 실패했습니다.')
+    guardianChatInput.value = messageText // 실패 시 입력 복원
+  }
+}
+
+// 시간 포맷팅 (타임스탬프를 HH:MM 형식으로)
+const formatChatTime = (timestamp: number) => {
+  const date = new Date(timestamp)
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
+}
+
+// 처방 전송
+const sendPrescription = async () => {
+  console.log('🔍 처방 전송 시작:', prescriptionForm)
+  
+  if (!prescriptionForm.walkingMinutes || !prescriptionForm.runningMinutes || !prescriptionForm.sets) {
+    alert('인터벌 운동 정보를 모두 입력해주세요.')
+    return
+  }
+
+  if (prescriptionForm.walkingMinutes <= 0 || prescriptionForm.runningMinutes <= 0 || prescriptionForm.sets <= 0) {
+    alert('인터벌 운동 정보는 1 이상의 값이어야 합니다.')
+    return
+  }
+
+  prescriptionLoading.value = true
+
+  try {
+    const request: CreateExercisePrescriptionRequest = {
+      userId: id,
+      startStretchingMinutes: prescriptionForm.startStretchingMinutes,
+      startStretchingUrl: prescriptionForm.startStretchingUrl?.trim() || undefined,
+      walkingMinutes: prescriptionForm.walkingMinutes,
+      runningMinutes: prescriptionForm.runningMinutes,
+      sets: prescriptionForm.sets,
+      endStretchingMinutes: prescriptionForm.endStretchingMinutes,
+      endStretchingUrl: prescriptionForm.endStretchingUrl?.trim() || undefined
+    }
+
+    console.log('📤 처방 전송 요청:', request)
+    console.log('📤 사용자 ID:', id)
+    
+    const result = await createPrescription(request)
+    console.log('✅ 처방 전송 성공:', result)
+    
+    alert('처방이 전송되었습니다!')
+    
+    // 폼 초기화
+    prescriptionForm.startStretchingMinutes = 5
+    prescriptionForm.startStretchingUrl = ''
+    prescriptionForm.walkingMinutes = 0
+    prescriptionForm.runningMinutes = 0
+    prescriptionForm.sets = 0
+    prescriptionForm.endStretchingMinutes = 5
+    prescriptionForm.endStretchingUrl = ''
+  } catch (error: any) {
+    console.error('❌ 처방 전송 실패:', error)
+    console.error('❌ 에러 상세:', {
+      message: error?.message,
+      response: error?.response,
+      status: error?.response?.status,
+      data: error?.response?.data
+    })
+    
+    let errorMessage = '처방 전송에 실패했습니다.'
+    if (error?.response?.status === 404) {
+      errorMessage = '서버를 찾을 수 없습니다. 백엔드 서버가 실행 중인지 확인해주세요.'
+    } else if (error?.response?.status === 500) {
+      errorMessage = '서버 오류가 발생했습니다. 백엔드 로그를 확인해주세요.'
+    } else if (error?.message) {
+      errorMessage = `오류: ${error.message}`
+    }
+    
+    alert(errorMessage)
+  } finally {
+    prescriptionLoading.value = false
+  }
+}
+
+// 주기적으로 채팅 메시지 업데이트 (5초마다)
+const startChatUpdate = () => {
+  chatUpdateInterval = window.setInterval(loadChatMessages, 5000)
+}
 
 onBeforeUnmount(() => {
   if (locationUpdateInterval) {
     clearInterval(locationUpdateInterval)
+  }
+  if (chatUpdateInterval) {
+    clearInterval(chatUpdateInterval)
   }
 })
 

@@ -30,5 +30,10 @@ public class User {
     
     @Column(length = 20)
     private String guardianPhone;  // 보호자 연락처
+    
+    @Column(nullable = false)
+    private Integer sproutCount = 0;  // 보유 새싹 개수
+    
+    private String lastSproutEarnedDate;  // 마지막 새싹 획득 날짜 (YYYY-MM-DD 형식)
 }
 

@@ -17,6 +17,16 @@
       <div class="text-text-sub">{{ user.age }}세</div>
       <div class="text-text-sub">{{ user.gender }}</div>
     </div>
+    <!-- 위치 정보 표시 -->
+    <div v-if="userLocation" class="flex items-center gap-2 text-xs">
+      <div class="flex items-center gap-1">
+        <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span class="text-green-600 font-semibold font-gowun">위치 추적 중</span>
+      </div>
+    </div>
+    <div v-else class="flex items-center gap-2 text-xs">
+      <span class="text-gray-400 font-gowun">위치 없음</span>
+    </div>
     <button
       @click="$emit('delete')"
       class="px-3 py-2 text-sm text-red-600 hover:bg-red-50 rounded-lg transition-colors font-gowun"
@@ -30,7 +40,7 @@
 import type { User } from '@/types/user'
 import defaultFace from '@/assets/images/default-face.png'
 
-defineProps<{ user: User }>()
+defineProps<{ user: User; userLocation?: { lat: number; lng: number } | null }>()
 defineEmits<{ open: []; delete: [] }>()
 </script>
 
