@@ -32,9 +32,3 @@ VITE_USER_ID=여기에_사용자ID_입력
 5. 서비스 URL에 `http://localhost:5173` 추가
 6. 발급받은 Client ID를 `.env` 파일에 입력
 
-
-
-
-
-
-
