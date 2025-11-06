@@ -144,14 +144,21 @@
           <div class="space-y-3 mb-4">
             <div class="flex justify-between items-center">
               <span class="text-sm text-text-sub font-gowun">심박수</span>
-              <span class="text-2xl font-bold text-primary font-gowun">{{ vital.hr }}</span>
+              <span class="text-2xl font-bold font-gowun" :class="(vital.hr && vital.hr > 0) ? 'text-primary' : 'text-gray-400'">
+                {{ (vital.hr && vital.hr > 0) ? vital.hr : '-' }}
+              </span>
               <span class="text-xs text-text-sub font-gowun">bpm</span>
             </div>
             <div class="flex justify-between items-center">
               <span class="text-sm text-text-sub font-gowun">SpO₂</span>
-              <span class="text-2xl font-bold text-primary font-gowun">{{ vital.spo2 }}</span>
+              <span class="text-2xl font-bold font-gowun" :class="(vital.spo2 && vital.spo2 > 0) ? 'text-primary' : 'text-gray-400'">
+                {{ (vital.spo2 && vital.spo2 > 0) ? vital.spo2 : '-' }}
+              </span>
               <span class="text-xs text-text-sub font-gowun">%</span>
             </div>
+          </div>
+          <div v-if="!vital.hr || vital.hr === 0" class="mb-2 text-center">
+            <p class="text-xs text-gray-400 font-gowun">센서 연결 대기 중...</p>
           </div>
           <div class="space-y-2">
             <RouterLink to="/user/survey/result">
@@ -279,74 +286,31 @@
     <!-- 상점 팝업 -->
     <AppModal :open="showShopPopup" title="상점" @close="closeShopPopup">
       <div class="space-y-4">
-        <!-- 선반 형식으로 물건 배치 -->
-        <div class="space-y-3">
-          <!-- 선반 1 -->
-          <div class="bg-gradient-to-r from-pink-100 via-purple-100 to-blue-100 rounded-lg p-4 border-2 border-pink-200">
-            <div class="text-xs text-pink-600 font-gowun mb-2 font-semibold">선반 1</div>
-            <div class="grid grid-cols-4 gap-3">
-              <div 
-                v-for="item in shopItems.slice(0, 4)" 
-                :key="item.id"
-                @click="buyItem(item)"
-                :class="[
-                  'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
-                  sproutCount >= item.price 
-                    ? 'border-transparent hover:border-pink-300' 
-                    : 'border-gray-300 opacity-50 cursor-not-allowed'
-                ]"
-              >
-                <div class="text-3xl mb-1 text-center">{{ item.emoji }}</div>
-                <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-                <div class="text-xs text-center text-pink-500 font-gowun mt-1">🌱 {{ item.price }}</div>
-                <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
+        <!-- 건강 상점 -->
+        <div class="bg-lime-50 rounded-lg p-4 border-2 border-lime-200">
+          <div class="text-sm text-lime-600 font-gowun mb-2 font-semibold">건강 상점</div>
+          <div class="grid grid-cols-4 gap-3">
+            <div 
+              v-for="item in shopItems.slice(0, 4)" 
+              :key="item.id"
+              @click="buyItem(item)"
+              :class="[
+                'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
+                sproutCount >= item.price 
+                  ? 'border-transparent hover:border-lime-300' 
+                  : 'border-gray-300 opacity-50 cursor-not-allowed'
+              ]"
+            >
+              <div class="mb-1 text-center">
+                <img 
+                  :src="item.image" 
+                  :alt="item.name"
+                  class="w-16 h-16 object-contain mx-auto"
+                />
               </div>
-            </div>
-          </div>
-
-          <!-- 선반 2 -->
-          <div class="bg-gradient-to-r from-purple-100 via-blue-100 to-green-100 rounded-lg p-4 border-2 border-purple-200">
-            <div class="text-xs text-purple-600 font-gowun mb-2 font-semibold">선반 2</div>
-            <div class="grid grid-cols-4 gap-3">
-              <div 
-                v-for="item in shopItems.slice(4, 8)" 
-                :key="item.id"
-                @click="buyItem(item)"
-                :class="[
-                  'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
-                  sproutCount >= item.price 
-                    ? 'border-transparent hover:border-purple-300' 
-                    : 'border-gray-300 opacity-50 cursor-not-allowed'
-                ]"
-              >
-                <div class="text-3xl mb-1 text-center">{{ item.emoji }}</div>
-                <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-                <div class="text-xs text-center text-purple-500 font-gowun mt-1">🌱 {{ item.price }}</div>
-                <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
-              </div>
-            </div>
-          </div>
-
-          <!-- 선반 3 -->
-          <div class="bg-gradient-to-r from-blue-100 via-green-100 to-yellow-100 rounded-lg p-4 border-2 border-blue-200">
-            <div class="text-xs text-blue-600 font-gowun mb-2 font-semibold">선반 3</div>
-            <div class="grid grid-cols-4 gap-3">
-              <div 
-                v-for="item in shopItems.slice(8, 12)" 
-                :key="item.id"
-                @click="buyItem(item)"
-                :class="[
-                  'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
-                  sproutCount >= item.price 
-                    ? 'border-transparent hover:border-blue-300' 
-                    : 'border-gray-300 opacity-50 cursor-not-allowed'
-                ]"
-              >
-                <div class="text-3xl mb-1 text-center">{{ item.emoji }}</div>
-                <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-                <div class="text-xs text-center text-blue-500 font-gowun mt-1">🌱 {{ item.price }}</div>
-                <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
-              </div>
+              <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
+              <div class="text-xs text-center text-lime-600 font-gowun mt-1">🌱 {{ item.price }}</div>
+              <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
             </div>
           </div>
         </div>
@@ -371,6 +335,7 @@ import { updateExerciseStatus } from '@/services/api/exerciseStatus'
 import { getPendingPrescription, acceptPrescription, declinePrescription, getPrescriptionsByUser, completePrescription, type ExercisePrescription } from '@/services/api/exercisePrescriptions'
 import type { SurveyRequest } from '@/services/api/surveyRequests'
 import { getSproutCount, earnSprout, spendSprouts } from '@/services/api/sprouts'
+import { upsertLocation } from '@/services/api/locations'
 
 const router = useRouter()
 const { position } = useGeo()
@@ -521,12 +486,46 @@ const checkDailyGoal = () => {
   localStorage.setItem('lastAvatarCheck', today)
 }
 
-// 아바타 상태 로드
+// 아바타 상태 로드 및 하루 체크
 const loadAvatarState = () => {
   const savedLevel = localStorage.getItem('avatarLevel')
   if (savedLevel) {
     avatarLevel.value = parseInt(savedLevel)
   }
+  
+  // 하루동안 새싹을 못 얻었는지 체크
+  checkDailySproutStatus()
+}
+
+// 하루동안 새싹 획득 여부 체크 및 레벨 조정
+const checkDailySproutStatus = () => {
+  const today = new Date().toISOString().slice(0, 10)
+  const lastSproutDate = localStorage.getItem('lastSproutEarnedDate')
+  const lastCheckDate = localStorage.getItem('lastSproutCheckDate')
+  
+  // 오늘 이미 체크했으면 스킵
+  if (lastCheckDate === today) {
+    return
+  }
+  
+  // 어제 새싹을 얻었는지 확인
+  const yesterday = new Date()
+  yesterday.setDate(yesterday.getDate() - 1)
+  const yesterdayStr = yesterday.toISOString().slice(0, 10)
+  
+  // 어제 새싹을 못 얻었다면 레벨 +1 (더 살찜)
+  // lastSproutDate가 어제 날짜가 아니고 오늘 날짜도 아니면 어제 새싹을 못 얻은 것
+  if (lastSproutDate && lastSproutDate !== yesterdayStr && lastSproutDate !== today) {
+    avatarLevel.value = Math.min(5, avatarLevel.value + 1)
+    localStorage.setItem('avatarLevel', avatarLevel.value.toString())
+    console.log('⚠️ 어제 새싹을 못 얻어서 레벨 증가:', avatarLevel.value, '(어제:', yesterdayStr, ', 마지막 새싹:', lastSproutDate, ')')
+  } else if (!lastSproutDate) {
+    // 한번도 새싹을 얻지 못한 경우도 체크 (첫 방문일 수 있으므로 건너뜀)
+    console.log('ℹ️ 새싹 획득 기록이 없습니다.')
+  }
+  
+  // 오늘 체크 완료 표시
+  localStorage.setItem('lastSproutCheckDate', today)
 }
 
 // 운동 시간 추적을 위한 watch
@@ -544,18 +543,10 @@ const isProcessingSproutEarn = ref(false) // 새싹 획득 중복 방지
 
 // 상점 아이템 데이터
 const shopItems = ref([
-  { id: 1, name: '운동화', emoji: '👟', price: 5000 },
-  { id: 2, name: '물병', emoji: '💧', price: 1000 },
-  { id: 3, name: '헤드폰', emoji: '🎧', price: 3000 },
-  { id: 4, name: '손목밴드', emoji: '⌚', price: 2000 },
-  { id: 5, name: '수건', emoji: '🧺', price: 800 },
-  { id: 6, name: '요가매트', emoji: '🧘', price: 4000 },
-  { id: 7, name: '덤벨', emoji: '🏋️', price: 6000 },
-  { id: 8, name: '밴드', emoji: '🏃', price: 2500 },
-  { id: 9, name: '프로틴', emoji: '🥤', price: 3500 },
-  { id: 10, name: '반바지', emoji: '🩳', price: 2800 },
-  { id: 11, name: '티셔츠', emoji: '👕', price: 2200 },
-  { id: 12, name: '모자', emoji: '🧢', price: 1500 },
+  { id: 1, name: '광동쌍화탕', image: '/images/kwangdong-ssanghwatang.png', price: 20 },
+  { id: 2, name: '까스활명수', image: '/images/cas-hwalmyeongsu.png', price: 15 },
+  { id: 3, name: '레모나', image: '/images/lemona.png', price: 5 },
+  { id: 4, name: '박카스', image: '/images/bacchus.png', price: 10 },
 ])
 const currentChatPage = ref(0)
 const messagesPerPage = 4
@@ -678,7 +669,73 @@ onMounted(async () => {
   setInterval(() => {
     checkPendingPrescription(userId)
   }, 30000)
+  
+  // 자동 위치 추적 및 전송 (백그라운드)
+  startLocationTracking(userId)
 })
+
+// 위치 추적 시작
+const startLocationTracking = (userId: string) => {
+  if (!('geolocation' in navigator)) {
+    console.warn('⚠️ 이 브라우저는 위치 서비스를 지원하지 않습니다.')
+    return
+  }
+
+  // 위치 전송 함수
+  const sendLocation = async (latitude: number, longitude: number) => {
+    try {
+      await upsertLocation(userId, {
+        latitude,
+        longitude,
+        timestamp: Date.now()
+      })
+      console.log('✅ 위치 전송 완료:', { userId, latitude, longitude })
+    } catch (error) {
+      console.error('❌ 위치 전송 실패:', error)
+    }
+  }
+
+  // 실시간 위치 추적
+  navigator.geolocation.watchPosition(
+    (pos) => {
+      const { latitude, longitude } = pos.coords
+      console.log('📍 현재 위치:', latitude, longitude, '정확도:', pos.coords.accuracy, 'm')
+      
+      // 즉시 한 번 전송
+      sendLocation(latitude, longitude)
+    },
+    (err) => {
+      console.warn('⚠️ 위치 접근 오류 (무시됨):', err.message)
+      // 에러가 발생해도 다른 기능에는 영향 없음
+    },
+    { 
+      enableHighAccuracy: true,  // GPS 정확도 향상
+      maximumAge: 5000,  // 5초 이내의 위치만 사용 (최신 위치 보장)
+      timeout: 15000  // 15초 타임아웃 (더 긴 시간 허용)
+    }
+  )
+
+  // 주기적으로 위치 전송 (30초마다)
+  setInterval(() => {
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        console.log('📍 주기적 위치 업데이트:', latitude, longitude, '정확도:', pos.coords.accuracy, 'm')
+        sendLocation(latitude, longitude)
+      },
+      (err) => {
+        console.warn('⚠️ 위치 가져오기 실패 (무시됨):', err.message)
+      },
+      { 
+        enableHighAccuracy: true,  // GPS 정확도 향상
+        maximumAge: 5000,  // 5초 이내의 위치만 사용
+        timeout: 15000  // 15초 타임아웃
+      }
+    )
+  }, 30000)
+  
+  console.log('✅ 백그라운드 위치 추적 시작 (30초마다 자동 전송)')
+}
 
 // 처방 확인
 const checkPendingPrescription = async (userId: string) => {
@@ -839,7 +896,17 @@ const handleAllExercisesCompleted = async () => {
       const result = await earnSprout(userId)
       sproutCount.value = result.sproutCount
       console.log('✅ 새싹 획득 완료! 현재 새싹:', sproutCount.value)
-      alert(`🎉 오늘의 운동 완료!\n🌱 새싹 +1 획득! (보유: ${sproutCount.value}개)`)
+      
+      // 새싹 획득 시 아바타 레벨 -1 (더 건강해짐)
+      avatarLevel.value = Math.max(1, avatarLevel.value - 1)
+      localStorage.setItem('avatarLevel', avatarLevel.value.toString())
+      
+      // 오늘 새싹 획득 날짜 저장
+      const today = new Date().toISOString().slice(0, 10)
+      localStorage.setItem('lastSproutEarnedDate', today)
+      
+      console.log('✅ 아바타 레벨 변경:', avatarLevel.value)
+      alert(`🎉 오늘의 운동 완료!\n🌱 새싹 +1 획득! (보유: ${sproutCount.value}개)\n레벨이 ${avatarLevel.value}로 변경되었습니다!`)
     } catch (error: any) {
       console.error('❌ 새싹 획득 실패:', error)
       console.error('❌ 에러 상세:', {
@@ -883,6 +950,18 @@ const completeStartStretching = async () => {
   }
   
   exerciseCompleted.value.startStretching = true
+  
+  // 운동 시작 상태 업데이트
+  const userId = localStorage.getItem('userId')
+  if (userId) {
+    try {
+      await updateExerciseStatus(userId, true)
+      console.log('✅ 운동 시작 상태 업데이트 완료')
+    } catch (error) {
+      console.error('❌ 운동 상태 업데이트 실패:', error)
+    }
+  }
+  
   console.log('✅ 시작 스트레칭 완료')
   await handleAllExercisesCompleted()
 }
@@ -916,6 +995,18 @@ const completeEndStretching = async () => {
   }
   
   exerciseCompleted.value.endStretching = true
+  
+  // 운동 종료 상태 업데이트
+  const userId = localStorage.getItem('userId')
+  if (userId) {
+    try {
+      await updateExerciseStatus(userId, false)
+      console.log('✅ 운동 종료 상태 업데이트 완료')
+    } catch (error) {
+      console.error('❌ 운동 상태 업데이트 실패:', error)
+    }
+  }
+  
   console.log('✅ 마무리 스트레칭 완료')
   await handleAllExercisesCompleted()
 }

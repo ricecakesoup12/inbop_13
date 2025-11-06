@@ -480,20 +480,24 @@ onMounted(async () => {
   }
   
   // 운동 상태 로드
-  try {
-    exerciseStatus.value = await getExerciseStatus(id)
-  } catch (error) {
-    console.error('운동 상태 로드 실패:', error)
+  const updateExerciseStatus = async () => {
+    try {
+      const status = await getExerciseStatus(id)
+      exerciseStatus.value = status
+      console.log('✅ 운동 상태 업데이트:', status)
+      console.log('🏃 운동 중 여부:', status?.isExercising)
+    } catch (error) {
+      console.error('❌ 운동 상태 로드 실패:', error)
+      // 에러가 발생해도 null로 설정하여 UI가 깨지지 않도록
+      exerciseStatus.value = null
+    }
   }
   
-  // 주기적으로 운동 상태 업데이트 (10초마다)
-  setInterval(async () => {
-    try {
-      exerciseStatus.value = await getExerciseStatus(id)
-    } catch (error) {
-      console.error('운동 상태 업데이트 실패:', error)
-    }
-  }, 10000)
+  // 초기 로드
+  await updateExerciseStatus()
+  
+  // 주기적으로 운동 상태 업데이트 (5초마다 - 더 빠른 업데이트)
+  setInterval(updateExerciseStatus, 5000)
   
   // 실시간 위치 업데이트 (5초마다)
   const updateUserLocation = async () => {

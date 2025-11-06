@@ -7,21 +7,22 @@
         </svg>
         실시간 바이탈
       </h3>
-      <div class="grid grid-cols-3 gap-4">
+      <div class="grid grid-cols-2 gap-4">
         <div class="text-center">
-          <div class="text-2xl font-bold text-primary font-gowun">{{ vital?.hr || 0 }}</div>
+          <div class="text-2xl font-bold font-gowun" :class="(vital?.hr && vital.hr > 0) ? 'text-primary' : 'text-gray-400'">
+            {{ (vital?.hr && vital.hr > 0) ? vital.hr : '-' }}
+          </div>
           <div class="text-xs text-text-sub mt-1 font-gowun">심박수 (bpm)</div>
         </div>
         <div class="text-center">
-          <div class="text-2xl font-bold text-primary font-gowun">{{ vital?.spo2 || 0 }}</div>
+          <div class="text-2xl font-bold font-gowun" :class="(vital?.spo2 && vital.spo2 > 0) ? 'text-primary' : 'text-gray-400'">
+            {{ (vital?.spo2 && vital.spo2 > 0) ? vital.spo2 : '-' }}
+          </div>
           <div class="text-xs text-text-sub mt-1 font-gowun">SpO₂ (%)</div>
         </div>
-        <div class="text-center">
-          <div class="text-2xl font-bold font-gowun" :class="vital?.active ? 'text-primary' : 'text-gray-400'">
-            {{ vital?.active ? '운동중' : '휴식중' }}
-          </div>
-          <div class="text-xs text-text-sub mt-1 font-gowun">운동 상태</div>
-        </div>
+      </div>
+      <div v-if="!vital?.hr || vital.hr === 0" class="mt-2 text-center">
+        <p class="text-xs text-gray-400 font-gowun">센서 연결 대기 중...</p>
       </div>
     </div>
   </AppCard>
