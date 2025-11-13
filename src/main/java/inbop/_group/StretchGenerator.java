@@ -56,7 +56,7 @@ public class StretchGenerator {
         UserProfile p = findUserByCode(userCode);
         return recommendStretchingInternal(p);
     }
-
+    // 내부 테스트용
     public Map<String, Object> recommendStretchingByUserId(Long userId) {
         UserProfile p = findUserById(userId);
         return recommendStretchingInternal(p);
@@ -156,7 +156,7 @@ public class StretchGenerator {
             @SuppressWarnings("unchecked")
             Map<String, Object> json = om.readValue(content, Map.class);
 
-            // 5) painAreas, globalCautions 꺼내기
+            // 5) painAreas, globalCautions, intervals 꺼내기
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> painAreas =
                     (List<Map<String, Object>>) json.getOrDefault("painAreas", List.of());
@@ -164,6 +164,10 @@ public class StretchGenerator {
             @SuppressWarnings("unchecked")
             List<String> globalCautions =
                     (List<String>) json.getOrDefault("globalCautions", List.of());
+
+            @SuppressWarnings("unchecked")
+            List<Map<String, Object>> intervals =
+                    (List<Map<String, Object>>) json.getOrDefault("intervals", List.of());
 
             // 6) 각 통증 부위별로 "미리 정해둔" 유튜브 영상 목록 videos 필드로 추가
             for (Map<String, Object> area : painAreas) {
@@ -173,13 +177,53 @@ public class StretchGenerator {
                 area.put("videos", preset);
             }
 
-            // 7) 최종 응답
+            // 7) 첫 번째 통증부위 기준으로 단일 JSON 구성
+            Map<String, Object> mainArea = painAreas.isEmpty() ? null : painAreas.get(0);
+
+            String painName = null;
+            List<Map<String, Object>> videos = List.of();
+
+            if (mainArea != null) {
+                painName = String.valueOf(
+                        mainArea.getOrDefault("koreanName",
+                                mainArea.getOrDefault("areaCode", ""))
+                );
+
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> v =
+                        (List<Map<String, Object>>) mainArea.getOrDefault("videos", List.of());
+                videos = v;
+            }
+
+            // 스트레칭 영상 변환
+            List<Map<String, Object>> koreanVideos = new ArrayList<>();
+            for (Map<String, Object> v : videos) {
+                Map<String, Object> kv = new LinkedHashMap<>();
+                kv.put("제목", v.get("title"));
+                kv.put("영상주소", v.get("videoUrl"));
+                koreanVideos.add(kv);
+            }
+
+            // 인터벌 운동 변환
+            List<Map<String, Object>> koreanIntervals = new ArrayList<>();
+            for (Map<String, Object> in : intervals) {
+                Map<String, Object> ki = new LinkedHashMap<>();
+                ki.put("루틴명", in.get("name"));
+                ki.put("세트수", in.get("sets"));
+                ki.put("운동시간분", in.get("workMinutes"));
+                ki.put("휴식시간분", in.get("restMinutes"));
+                ki.put("강도", in.get("intensity"));
+                ki.put("설명", in.get("description"));
+                koreanIntervals.add(ki);
+            }
+
+            // 최종 응답
             Map<String, Object> result = new LinkedHashMap<>();
-            result.put("사용자ID", p.id);
             result.put("사용자코드", p.userCode);
-            result.put("통증부위", painAreas);
+            result.put("통증부위", painName);      // ex) "허리"
+            result.put("스트레칭영상", koreanVideos);
+            result.put("인터벌운동", koreanIntervals);
             result.put("주의사항", globalCautions);
-            result.put("출처", "db+ai+preset");
 
             return result;
 
@@ -302,7 +346,6 @@ public class StretchGenerator {
         Map<String, Object> v = new LinkedHashMap<>();
         v.put("title", title);
         v.put("videoUrl", url);
-        // 썸네일은 필요하면 프론트에서 oEmbed 등으로 가져가도 됨
         return v;
     }
 
@@ -310,15 +353,11 @@ public class StretchGenerator {
 
     private Map<String, Object> fallbackStretchResult(String reason, UserProfile p) {
         Map<String, Object> result = new LinkedHashMap<>();
-        result.put("사용자ID", p.id);
+        // ID는 노출 안 함
         result.put("사용자코드", p.userCode);
-        result.put("통증부위", List.of());
-        result.put("주의사항", List.of(
-                "현재는 정확한 통증 부위를 분석하지 못했습니다.",
-                "평소에 통증이 있는 부위가 있다면, 무리하지 않는 선에서 가벼운 전신 스트레칭 후 휴식을 취하세요.",
-                "통증이 지속되거나 심하면 반드시 의료진과 상담하세요."
-        ));
+        result.put("통증부위", null);
         result.put("스트레칭영상", List.of());
+        result.put("인터벌운동", List.of());
         result.put("실패이유", reason);
         result.put("출처", "fallback");
         return result;
@@ -392,7 +431,6 @@ public class StretchGenerator {
         return weight / (h * h);
     }
 
-    /** 리스트 끝에서 limit개만 자르기 */
     private static List<ChatMessage> lastMessages(List<ChatMessage> all, int limit) {
         if (all == null || all.isEmpty()) return List.of();
         int from = Math.max(0, all.size() - limit);
