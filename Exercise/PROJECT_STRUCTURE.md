@@ -244,11 +244,10 @@ Exercise\main\
    │     ├─ surveys.ts               ← 기존 설문 API
    │     └─ metrics.ts               ← 메트릭 API
    │
-   ├─ 📂 composables\                ← 재사용 로직 (Composition API)
-   │  ├─ useGeo.ts                   ← 위치 정보 가져오기
-   │  ├─ useSpeech.ts                ← 음성 인식 (Web Speech API)
-   │  ├─ useRealtime.ts              ← WebSocket 실시간 통신
-   │  └─ useConfirm.ts               ← 확인 다이얼로그 헬퍼
+  ├─ 📂 composables\                ← 재사용 로직 (Composition API)
+  │  ├─ useGeo.ts                   ← 위치 정보 가져오기
+  │  ├─ useRealtime.ts              ← WebSocket 실시간 통신
+  │  └─ useConfirm.ts               ← 확인 다이얼로그 헬퍼
    │
    ├─ 📂 types\                      ← TypeScript 타입 정의
    │  ├─ index.d.ts                  ← 전역 타입
@@ -361,7 +360,6 @@ Exercise\main\
 | 파일 | 역할 |
 |------|------|
 | `useGeo.ts` | 위치 정보 가져오기 (Geolocation API) |
-| `useSpeech.ts` | 음성 인식 (Web Speech API) |
 | `useRealtime.ts` | WebSocket 실시간 통신 |
 | `useConfirm.ts` | 확인 다이얼로그 헬퍼 |
 

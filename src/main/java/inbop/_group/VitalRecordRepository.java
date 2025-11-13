@@ -25,3 +25,4 @@ public interface VitalRecordRepository extends JpaRepository<VitalRecord, Long> 
     List<VitalRecord> findByUserIdOrderByRecordedAtDesc(Long userId);
 }
 
+

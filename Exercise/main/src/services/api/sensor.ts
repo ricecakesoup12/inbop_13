@@ -48,6 +48,24 @@ export function subscribeSensorStream(
 }
 
 /**
+ * 센서 연결 상태 확인
+ */
+export interface SensorStatus {
+  connected: boolean
+  portName: string
+  baud: number
+  running: boolean
+  hasData: boolean
+  lastData: SensorData | null
+  availablePorts: string[]
+}
+
+export async function getSensorStatus(): Promise<SensorStatus> {
+  const response = await fetch(`${API_BASE}/api/serial/status`)
+  return response.json()
+}
+
+/**
  * 센서 데이터를 VitalNow 형식으로 변환
  */
 export function convertToVitalNow(sensorData: SensorData): VitalNow {

@@ -33,5 +33,11 @@ public class SerialController {
         return service.streamJson();
     }
 
+    // 센서 연결 상태 확인
+    @GetMapping("/status")
+    public Map<String, Object> status() {
+        return service.getConnectionStatus();
+    }
+
 }
 

@@ -15,10 +15,18 @@ export const useUsersStore = defineStore('users', {
       this.loading = true
       this.error = null
       try {
-        this.list = await usersApi.getUsers()
-      } catch (error) {
+        const users = await usersApi.getUsers()
+        this.list = users
+        console.log('✅ 사용자 목록 로드 완료:', users.length, '명')
+      } catch (error: any) {
         this.error = '사용자 목록을 불러오는데 실패했습니다.'
-        console.error(error)
+        console.error('❌ 사용자 목록 로드 실패:', error)
+        console.error('에러 상세:', {
+          message: error?.message,
+          response: error?.response?.data,
+          status: error?.response?.status,
+          url: error?.config?.url
+        })
       } finally {
         this.loading = false
       }

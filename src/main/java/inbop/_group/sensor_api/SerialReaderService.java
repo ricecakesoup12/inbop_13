@@ -1,19 +1,5 @@
 package inbop._group.sensor_api;
 
-import com.fazecast.jSerialComm.SerialPort;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import inbop._group.VitalRecord;
-import inbop._group.VitalRecordRepository;
-import jakarta.annotation.PostConstruct;
-import jakarta.annotation.PreDestroy;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import reactor.core.publisher.Flux;
-import reactor.core.publisher.Sinks;
-
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.Arrays;
@@ -23,6 +9,22 @@ import java.util.Map;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.atomic.AtomicReference;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fazecast.jSerialComm.SerialPort;
+
+import inbop._group.VitalRecord;
+import inbop._group.VitalRecordRepository;
+import jakarta.annotation.PostConstruct;
+import jakarta.annotation.PreDestroy;
+import reactor.core.publisher.Flux;
+import reactor.core.publisher.Sinks;
 
 @Service
 public class SerialReaderService {
@@ -199,6 +201,18 @@ public class SerialReaderService {
 
     public Flux<String> streamJson() {
         return sink.asFlux();
+    }
+
+    public Map<String, Object> getConnectionStatus() {
+        Map<String, Object> status = new HashMap<>();
+        status.put("connected", port != null && port.isOpen());
+        status.put("portName", portName);
+        status.put("baud", baud);
+        status.put("running", running);
+        status.put("hasData", !lastSensorData.get().isEmpty());
+        status.put("lastData", lastSensorData.get());
+        status.put("availablePorts", listPorts());
+        return status;
     }
 
     @PreDestroy

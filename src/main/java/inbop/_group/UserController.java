@@ -86,8 +86,24 @@ public class UserController {
     // 사용자 목록 조회
     @GetMapping
     public ResponseEntity<List<User>> getUsers() {
-        List<User> users = userRepository.findAll();
-        return ResponseEntity.ok(users);
+        try {
+            System.out.println("=== 사용자 목록 조회 시작 ===");
+            List<User> users = userRepository.findAll();
+            System.out.println("조회된 사용자 수: " + users.size());
+            
+            // 각 사용자 정보 출력 (디버깅)
+            for (User user : users) {
+                System.out.println("사용자 ID: " + user.getId() + ", 이름: " + user.getName() + ", 새싹: " + user.getSproutCount());
+            }
+            
+            return ResponseEntity.ok(users);
+        } catch (Exception e) {
+            System.err.println("=== 사용자 목록 조회 실패 ===");
+            System.err.println("에러 메시지: " + e.getMessage());
+            System.err.println("에러 타입: " + e.getClass().getName());
+            e.printStackTrace();
+            return ResponseEntity.status(500).body(null);
+        }
     }
     
     // 사용자 상세 조회

@@ -95,7 +95,6 @@
 | API | 용도 |
 |-----|------|
 | [Geolocation API](https://developer.mozilla.org/ko/docs/Web/API/Geolocation_API) | GPS 위치 추적 |
-| [Web Speech API](https://developer.mozilla.org/en-US/docs/Web/API/Web_Speech_API) | 음성 인식 (설문 작성) |
 | [LocalStorage API](https://developer.mozilla.org/ko/docs/Web/API/Window/localStorage) | 클라이언트 데이터 저장 |
 | [Canvas API](https://developer.mozilla.org/ko/docs/Web/API/Canvas_API) | 이미지 리사이징 및 압축 |
 | [FileReader API](https://developer.mozilla.org/ko/docs/Web/API/FileReader) | 파일 업로드 및 Base64 변환 |
