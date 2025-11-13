@@ -114,6 +114,124 @@
       <NaverUserLocationMap :position="userLocation || user.position" :userName="user.name" />
     </div>
 
+    <!-- 운동처방 도우미 (AI 기반 스트레칭/인터벌) -->
+    <AppCard>
+      <div class="p-6">
+        <div class="flex items-center justify-between mb-4">
+          <h3 class="text-lg font-semibold text-text-main font-gowun flex items-center gap-2">
+            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            </svg>
+            운동처방 도우미
+          </h3>
+          <AppButton 
+            @click="loadStretchRecommendation" 
+            :disabled="stretchLoading"
+            size="sm"
+          >
+            <svg v-if="stretchLoading" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+              <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+              <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+            </svg>
+            {{ stretchLoading ? '분석 중...' : 'AI 운동 추천' }}
+          </AppButton>
+        </div>
+
+        <!-- 추천 결과 표시 -->
+        <div v-if="stretchRecommendation">
+          <!-- 통증 부위 -->
+          <div v-if="stretchRecommendation.통증부위" class="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
+            <div class="text-sm font-semibold text-yellow-800 font-gowun">
+              🎯 주요 통증 부위: {{ stretchRecommendation.통증부위 }}
+            </div>
+          </div>
+
+          <!-- 스트레칭 영상 -->
+          <div v-if="stretchRecommendation.스트레칭영상?.length > 0" class="mb-4">
+            <h4 class="text-md font-semibold text-gray-800 mb-2 font-gowun">📹 추천 스트레칭 영상</h4>
+            <div class="space-y-2">
+              <div 
+                v-for="(video, idx) in stretchRecommendation.스트레칭영상" 
+                :key="idx"
+                class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+              >
+                <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
+                  <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
+                </svg>
+                <a 
+                  :href="video.영상주소" 
+                  target="_blank" 
+                  class="text-sm text-blue-600 hover:underline font-gowun flex-1"
+                >
+                  {{ video.제목 }}
+                </a>
+              </div>
+            </div>
+          </div>
+
+          <!-- 인터벌 운동 -->
+          <div v-if="stretchRecommendation.인터벌운동?.length > 0" class="mb-4">
+            <h4 class="text-md font-semibold text-gray-800 mb-2 font-gowun">🏃 추천 인터벌 운동</h4>
+            <div class="space-y-3">
+              <div 
+                v-for="(interval, idx) in stretchRecommendation.인터벌운동" 
+                :key="idx"
+                class="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200"
+              >
+                <div class="flex items-center justify-between mb-2">
+                  <div class="text-md font-bold text-gray-800 font-gowun">{{ interval.루틴명 }}</div>
+                  <span 
+                    :class="[
+                      'text-xs px-2 py-1 rounded-full font-bold',
+                      interval.강도 === 'low' ? 'bg-green-200 text-green-800' :
+                      interval.강도 === 'medium' ? 'bg-yellow-200 text-yellow-800' :
+                      'bg-red-200 text-red-800'
+                    ]"
+                  >
+                    {{ interval.강도 === 'low' ? '낮음' : interval.강도 === 'medium' ? '중간' : '높음' }}
+                  </span>
+                </div>
+                <div class="text-sm text-gray-700 font-gowun mb-2">
+                  {{ interval.설명 }}
+                </div>
+                <div class="flex gap-4 text-xs text-gray-600 font-gowun">
+                  <span>🔢 {{ interval.세트수 }}세트</span>
+                  <span>⏱️ 운동 {{ interval.운동시간분 }}분</span>
+                  <span>😌 휴식 {{ interval.휴식시간분 }}분</span>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 주의사항 -->
+          <div v-if="stretchRecommendation.주의사항?.length > 0" class="p-4 bg-red-50 border-l-4 border-red-400 rounded">
+            <h4 class="text-md font-semibold text-red-800 mb-2 font-gowun">⚠️ 주의사항</h4>
+            <ul class="space-y-1">
+              <li 
+                v-for="(caution, idx) in stretchRecommendation.주의사항" 
+                :key="idx"
+                class="text-sm text-red-700 font-gowun"
+              >
+                • {{ caution }}
+              </li>
+            </ul>
+          </div>
+
+          <!-- 실패 메시지 -->
+          <div v-if="stretchRecommendation.실패이유" class="p-4 bg-gray-100 rounded">
+            <div class="text-sm text-gray-600 font-gowun">
+              ℹ️ {{ stretchRecommendation.실패이유 }}
+            </div>
+          </div>
+        </div>
+
+        <!-- 초기 상태 -->
+        <div v-else-if="!stretchLoading" class="text-center py-8 text-gray-400 font-gowun">
+          AI 버튼을 눌러 사용자의 상태에 맞는 운동을 추천받으세요
+        </div>
+      </div>
+    </AppCard>
+
     <!-- 대화창과 처방 칸 (2열 레이아웃) -->
     <div class="grid md:grid-cols-2 gap-6">
       <!-- 왼쪽: 대화창 -->
@@ -380,6 +498,8 @@ import { createPrescription, type CreateExercisePrescriptionRequest } from '@/se
 import type { WeightRecord } from '@/services/api/weightRecords'
 import type { ExerciseStatus } from '@/services/api/exerciseStatus'
 import type { LocationDto } from '@/services/api/locations'
+import type { StretchRecommendation } from '@/services/api/stretch'
+import { getStretchRecommendation } from '@/services/api/stretch'
 import AppCard from '@/components/common/AppCard.vue'
 import AppButton from '@/components/common/AppButton.vue'
 import AppModal from '@/components/common/AppModal.vue'
@@ -423,6 +543,10 @@ const prescriptionForm = reactive({
   endStretchingUrl: ''
 })
 const prescriptionLoading = ref(false)
+
+// 운동처방 도우미 (AI 스트레칭/인터벌)
+const stretchRecommendation = ref<StretchRecommendation | null>(null)
+const stretchLoading = ref(false)
 
 // 수정 모달
 const showEditModal = ref(false)
@@ -662,6 +786,28 @@ const sendPrescription = async () => {
     alert(errorMessage)
   } finally {
     prescriptionLoading.value = false
+  }
+}
+
+// AI 스트레칭/인터벌 운동 추천 로드
+const loadStretchRecommendation = async () => {
+  if (!user.value?.userCode) {
+    alert('사용자 코드가 없습니다.')
+    return
+  }
+
+  stretchLoading.value = true
+  stretchRecommendation.value = null
+
+  try {
+    const result = await getStretchRecommendation(user.value.userCode)
+    stretchRecommendation.value = result
+    console.log('✅ AI 운동 추천 완료:', result)
+  } catch (error) {
+    console.error('❌ AI 운동 추천 실패:', error)
+    alert('AI 운동 추천에 실패했습니다. OpenAI API 키를 확인해주세요.')
+  } finally {
+    stretchLoading.value = false
   }
 }
 
