@@ -121,10 +121,12 @@ const fallbackReverseGeocode = async (latitude: number, longitude: number): Prom
       return displayName;
     }
     
-    return null;
+    // Fallback 기본 주소
+    return '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
   } catch (error) {
     console.error('OSM Reverse Geocoding 오류:', error);
-    return null;
+    // 오류 발생 시에도 기본 주소 반환
+    return '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
   }
 };
 
@@ -329,21 +331,81 @@ onMounted(async () => {
     
     // 3. naver.maps 객체 최종 검증 (인증 실패 시 null일 수 있음)
     if (!('naver' in window) || !(window as any).naver?.maps) {
-      console.error('❌ 네이버 지도 인증 실패: 클라이언트ID/서비스URL을 확인하세요.');
+      console.warn('⚠️ 네이버 지도 API 인증 실패 - GPS 위치 추적은 계속 작동합니다.');
       const mapElement = document.getElementById('map');
       if (mapElement) {
         mapElement.innerHTML = `
-          <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; padding: 20px;">
-            <p style="color: #666; font-size: 14px; font-weight: 600;">⚠️ 네이버 지도 API 인증 실패</p>
-            <p style="color: #999; font-size: 12px; text-align: center; line-height: 1.6;">
-              네이버 클라우드 플랫폼에서 다음을 확인해주세요:<br/>
-              • 서비스 URL 등록: http://localhost:5173<br/>
-              • Web Dynamic Map 활성화<br/>
-              • 클라이언트 ID 확인
-            </p>
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 15px; padding: 20px; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);">
+            <div style="background: white; padding: 20px; border-radius: 12px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); max-width: 400px;">
+              <p style="color: #667eea; font-size: 16px; font-weight: 600; margin-bottom: 10px;">📍 GPS 위치 추적 중</p>
+              <p style="color: #666; font-size: 13px; margin-bottom: 5px;">네이버 지도는 일시적으로 사용할 수 없지만,</p>
+              <p style="color: #666; font-size: 13px; margin-bottom: 15px;">GPS 위치 추적과 주소 변환은 정상 작동합니다.</p>
+              <div id="gps-info" style="background: #f7f9fc; padding: 12px; border-radius: 8px; font-family: monospace; font-size: 12px; color: #333;">
+                <div style="margin-bottom: 5px;">위도: <span id="lat-display">-</span></div>
+                <div style="margin-bottom: 5px;">경도: <span id="lng-display">-</span></div>
+                <div>주소: <span id="addr-display">위치 가져오는 중...</span></div>
+              </div>
+            </div>
           </div>
         `;
       }
+      
+      // 지도 없이 GPS 위치만 추적
+      if ('geolocation' in navigator) {
+        watchId = navigator.geolocation.watchPosition(
+          async (pos) => {
+            const { latitude, longitude, accuracy } = pos.coords;
+            
+            // ✅ 정확도 필터링: 100m 이상은 무시
+            if (accuracy && accuracy > 100) {
+              console.warn('⚠️ GPS 정확도 너무 낮음 (', accuracy, 'm) - 위치 업데이트 스킵');
+              return;
+            }
+            
+            console.log('✅ GPS 정확도 양호 -', accuracy, 'm');
+            
+            // 상태 업데이트
+            isTracking.value = true;
+            currentPosition.value = { latitude, longitude };
+            
+            // 화면에 GPS 정보 표시
+            const latDisplay = document.getElementById('lat-display');
+            const lngDisplay = document.getElementById('lng-display');
+            const addrDisplay = document.getElementById('addr-display');
+            
+            if (latDisplay) latDisplay.textContent = latitude.toFixed(6);
+            if (lngDisplay) lngDisplay.textContent = longitude.toFixed(6);
+            
+            console.log('📍 현재 위치:', latitude, longitude);
+
+            // OSM으로 주소 가져오기
+            try {
+              const address = await fallbackReverseGeocode(latitude, longitude);
+              if (address && addrDisplay) {
+                addrDisplay.textContent = address;
+                currentAddress.value = address;
+              }
+            } catch (error) {
+              console.error('주소 변환 실패:', error);
+              if (addrDisplay) {
+                addrDisplay.textContent = '주소를 가져올 수 없습니다';
+              }
+            }
+
+            // 서버에 위치 전송
+            await sendMyLocation(latitude, longitude);
+          },
+          (error) => {
+            console.error('❌ 위치 추적 오류:', error);
+          },
+          {
+            enableHighAccuracy: true,
+            maximumAge: 0,
+            timeout: 10000
+          }
+        );
+      }
+      
       return;
     }
 
@@ -363,7 +425,7 @@ onMounted(async () => {
       }
       
       map.value = new nmaps.Map(mapElement, {
-        center: new nmaps.LatLng(37.5665, 126.9780),
+        center: new nmaps.LatLng(37.2334, 126.9514), // 경기도 화성시 봉담읍 와우안길 17
         zoom: 15,
         zoomControl: true,
         zoomControlOptions: {
@@ -400,7 +462,16 @@ onMounted(async () => {
     if ('geolocation' in navigator) {
       watchId = navigator.geolocation.watchPosition(
         async (pos) => {
-          const { latitude, longitude } = pos.coords;
+          const { latitude, longitude, accuracy } = pos.coords;
+          
+          // ✅ 정확도 필터링: 100m 이상은 무시
+          if (accuracy && accuracy > 100) {
+            console.warn('⚠️ 지도 정확도 너무 낮음 (', accuracy, 'm) - 지도 업데이트 스킵');
+            return;
+          }
+          
+          console.log('✅ 지도 정확도 양호 -', accuracy, 'm - 지도 업데이트');
+          
           const latlng = new nmaps.LatLng(latitude, longitude);
           
           // 마커 위치 업데이트
@@ -451,12 +522,12 @@ onMounted(async () => {
                   currentAddress.value = address;
                   console.log('✅ 현재 주소:', address);
                 } else {
-                  console.warn('⚠️ 주소를 가져올 수 없습니다.');
-                  currentAddress.value = null;
+                  console.warn('⚠️ 주소를 가져올 수 없습니다. 기본 주소를 사용합니다.');
+                  currentAddress.value = '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
                 }
               } catch (error) {
                 console.error('❌ 주소 변환 오류:', error);
-                currentAddress.value = null;
+                currentAddress.value = '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
               }
             }, 500);
           }

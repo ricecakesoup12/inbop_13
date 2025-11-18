@@ -65,15 +65,26 @@ public class StretchGenerator {
     // ===================== 메인 로직 =====================
 
     private Map<String, Object> recommendStretchingInternal(UserProfile p) {
-        // 1) 최근 채팅 불러오기 (chat_messages.user_id 에 userCode 저장한다고 가정)
-        String userKey = p.userCode != null ? p.userCode :
-                (p.id != null ? String.valueOf(p.id) : null);
+        System.out.println("=== AI 운동 추천 시작 ===");
+        System.out.println("사용자 ID: " + p.id);
+        System.out.println("사용자 코드: " + p.userCode);
+        System.out.println("사용자 이름: " + p.name);
+        
+        // 1) 최근 채팅 불러오기 (chat_messages.user_id 에 숫자 ID가 저장됨)
+        // 채팅 메시지는 숫자 ID로 저장되므로 ID를 우선 사용
+        String userKey = p.id != null ? String.valueOf(p.id) : p.userCode;
 
+        System.out.println("채팅 조회용 userKey: " + userKey + " (ID 우선 사용)");
+        
         List<ChatMessage> allMessages = userKey != null
                 ? chatMessageRepository.findByUserIdOrderByTimestampAsc(userKey)
                 : List.of();
 
+        System.out.println("조회된 전체 채팅 메시지 개수: " + allMessages.size());
+        
         List<ChatMessage> recent = lastMessages(allMessages, 30); // 최근 30개만 사용
+        
+        System.out.println("최근 30개 메시지 개수: " + recent.size());
 
         String recentText = recent.stream()
                 .filter(m -> "user".equalsIgnoreCase(m.getSender()))
@@ -83,6 +94,12 @@ public class StretchGenerator {
                 .filter(s -> !s.isBlank())
                 .map(s -> "- " + s)
                 .reduce("", (a, b) -> a + (a.isEmpty() ? "" : "\n") + b);
+        
+        long userMessageCount = recent.stream()
+                .filter(m -> "user".equalsIgnoreCase(m.getSender())).count();
+        System.out.println("사용자가 보낸 메시지 개수: " + userMessageCount);
+        System.out.println("AI에 전송할 사용자 메시지:");
+        System.out.println(recentText.isBlank() ? "(메시지 없음)" : recentText);
 
         // 2) 유저 프로필 문자열 만들기
         String profile = """
@@ -168,6 +185,14 @@ public class StretchGenerator {
             @SuppressWarnings("unchecked")
             List<Map<String, Object>> intervals =
                     (List<Map<String, Object>>) json.getOrDefault("intervals", List.of());
+            
+            System.out.println("=== OpenAI 응답 분석 ===");
+            System.out.println("painAreas 개수: " + painAreas.size());
+            if (!painAreas.isEmpty()) {
+                System.out.println("painAreas 상세: " + painAreas);
+            }
+            System.out.println("intervals 개수: " + intervals.size());
+            System.out.println("=====================");
 
             // 6) 각 통증 부위별로 "미리 정해둔" 유튜브 영상 목록 videos 필드로 추가
             for (Map<String, Object> area : painAreas) {
@@ -177,31 +202,43 @@ public class StretchGenerator {
                 area.put("videos", preset);
             }
 
-            // 7) 첫 번째 통증부위 기준으로 단일 JSON 구성
+            // 7) 모든 통증부위를 콤마로 연결하고, 첫 번째 부위의 영상 사용
             Map<String, Object> mainArea = painAreas.isEmpty() ? null : painAreas.get(0);
 
             String painName = null;
             List<Map<String, Object>> videos = List.of();
 
-            if (mainArea != null) {
-                painName = String.valueOf(
-                        mainArea.getOrDefault("koreanName",
-                                mainArea.getOrDefault("areaCode", ""))
-                );
-
+            if (!painAreas.isEmpty()) {
+                // 모든 통증 부위의 이름을 콤마로 연결
+                painName = painAreas.stream()
+                        .map(area -> String.valueOf(
+                                area.getOrDefault("koreanName",
+                                        area.getOrDefault("areaCode", ""))))
+                        .filter(name -> !name.isBlank())
+                        .collect(java.util.stream.Collectors.joining(", "));
+                
+                // 첫 번째 부위의 영상 사용
                 @SuppressWarnings("unchecked")
                 List<Map<String, Object>> v =
                         (List<Map<String, Object>>) mainArea.getOrDefault("videos", List.of());
                 videos = v;
             }
+            
+            // 통증 부위가 없거나 영상이 비어있으면 기본 스트레칭 영상 제공
+            if (videos.isEmpty()) {
+                System.out.println("⚠️ 통증 부위가 없거나 영상이 비어있어 기본 스트레칭 영상을 제공합니다.");
+                videos = presetVideosForArea("default", "전신");
+            }
 
             // 스트레칭 영상 변환
             List<Map<String, Object>> koreanVideos = new ArrayList<>();
+            System.out.println("📹 스트레칭 영상 개수: " + videos.size());
             for (Map<String, Object> v : videos) {
                 Map<String, Object> kv = new LinkedHashMap<>();
                 kv.put("제목", v.get("title"));
                 kv.put("영상주소", v.get("videoUrl"));
                 koreanVideos.add(kv);
+                System.out.println("  - 제목: " + v.get("title") + ", URL: " + v.get("videoUrl"));
             }
 
             // 인터벌 운동 변환
@@ -224,6 +261,11 @@ public class StretchGenerator {
             result.put("스트레칭영상", koreanVideos);
             result.put("인터벌운동", koreanIntervals);
             result.put("주의사항", globalCautions);
+
+            System.out.println("✅ 최종 응답 생성 완료:");
+            System.out.println("  - 통증부위: " + painName);
+            System.out.println("  - 스트레칭영상 개수: " + koreanVideos.size());
+            System.out.println("  - 인터벌운동 개수: " + koreanIntervals.size());
 
             return result;
 

@@ -28,3 +28,6 @@ public interface VitalRecordRepository extends JpaRepository<VitalRecord, Long> 
 
 
 
+
+
+

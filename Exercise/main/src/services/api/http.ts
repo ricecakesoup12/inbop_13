@@ -22,7 +22,17 @@ http.interceptors.request.use(
 http.interceptors.response.use(
   (response) => response,
   (error) => {
-    console.error('API Error:', error)
+    const status = error?.response?.status
+    const url = error?.config?.url || ''
+
+    // /pending API는 404가 정상 케이스이므로 콘솔에 에러를 남기지 않음
+    const isExpectedPending404 =
+      status === 404 && url.includes('/api/exercise-prescriptions/user/') && url.endsWith('/pending')
+
+    if (!isExpectedPending404) {
+      console.error('API Error:', error)
+    }
+
     return Promise.reject(error)
   }
 )

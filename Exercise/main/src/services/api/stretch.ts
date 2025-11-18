@@ -32,3 +32,6 @@ export async function getStretchRecommendation(userCode: string): Promise<Stretc
   return data
 }
 
+
+
+

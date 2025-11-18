@@ -8,7 +8,8 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/exercise-prescriptions")
-@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://127.0.0.1:5173", "http://127.0.0.1:5174"})
+@CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175", 
+                        "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175"})
 public class ExercisePrescriptionController {
 
     private final ExercisePrescriptionRepository prescriptionRepository;

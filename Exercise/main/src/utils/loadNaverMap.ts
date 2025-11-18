@@ -55,7 +55,7 @@ export function loadNaverMap(clientId: string, submodules = "geocoder"): Promise
       loadPromise = null;
     };
     
-    // 새 스크립트 생성 (신규 API: ncpKeyId 사용)
+    // 새 스크립트 생성 (업그레이드된 API: ncpKeyId 사용)
     const script = document.createElement("script");
     script.src = `https://oapi.map.naver.com/openapi/v3/maps.js?ncpKeyId=${clientId}&submodules=${submodules}`;
     script.async = true;

@@ -116,13 +116,10 @@
 
     <!-- 운동처방 도우미 (AI 기반 스트레칭/인터벌) -->
     <AppCard>
-      <div class="p-6">
+      <div class="p-6 bg-green-50">
         <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-text-main font-gowun flex items-center gap-2">
-            <svg class="w-5 h-5 text-purple-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
-            </svg>
-            운동처방 도우미
+          <h3 class="text-lg font-semibold text-text-main font-gowun">
+            운동 추천 도우미
           </h3>
           <AppButton 
             @click="loadStretchRecommendation" 
@@ -138,90 +135,89 @@
         </div>
 
         <!-- 추천 결과 표시 -->
-        <div v-if="stretchRecommendation">
-          <!-- 통증 부위 -->
-          <div v-if="stretchRecommendation.통증부위" class="mb-4 p-3 bg-yellow-50 border-l-4 border-yellow-400 rounded">
-            <div class="text-sm font-semibold text-yellow-800 font-gowun">
-              🎯 주요 통증 부위: {{ stretchRecommendation.통증부위 }}
-            </div>
-          </div>
-
-          <!-- 스트레칭 영상 -->
-          <div v-if="stretchRecommendation.스트레칭영상?.length > 0" class="mb-4">
-            <h4 class="text-md font-semibold text-gray-800 mb-2 font-gowun">📹 추천 스트레칭 영상</h4>
-            <div class="space-y-2">
+        <div v-if="stretchRecommendation" class="space-y-4">
+          <!-- 강도 ver 운동 추천 박스 (스트레칭 영상 2개) -->
+          <div v-if="stretchRecommendation.스트레칭영상?.length > 0" class="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
+            <h4 class="text-sm font-semibold text-blue-800 mb-2 font-gowun">
+              <template v-if="stretchRecommendation.인터벌운동?.length > 0">
+                {{ stretchRecommendation.인터벌운동[0].강도 === 'low' ? '낮음' : stretchRecommendation.인터벌운동[0].강도 === 'medium' ? '중간' : '높음' }} ver 운동 추천
+              </template>
+              <template v-else>
+                운동 추천
+              </template>
+            </h4>
+            <div class="space-y-1">
               <div 
-                v-for="(video, idx) in stretchRecommendation.스트레칭영상" 
+                v-for="(video, idx) in stretchRecommendation.스트레칭영상.slice(0, 2)" 
                 :key="idx"
-                class="flex items-center gap-2 p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors"
+                class="text-sm text-blue-700 font-gowun"
               >
-                <svg class="w-5 h-5 text-red-600 flex-shrink-0" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M10 16.5l6-4.5-6-4.5v9zM12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8z"/>
-                </svg>
-                <a 
-                  :href="video.영상주소" 
-                  target="_blank" 
-                  class="text-sm text-blue-600 hover:underline font-gowun flex-1"
-                >
-                  {{ video.제목 }}
-                </a>
+                {{ video.제목 }}: <a :href="video.영상주소" target="_blank" class="text-blue-600 hover:underline">{{ video.영상주소 }}</a>
               </div>
             </div>
           </div>
 
-          <!-- 인터벌 운동 -->
-          <div v-if="stretchRecommendation.인터벌운동?.length > 0" class="mb-4">
-            <h4 class="text-md font-semibold text-gray-800 mb-2 font-gowun">🏃 추천 인터벌 운동</h4>
+          <!-- 인터벌 운동 (초록색) -->
+          <div v-if="stretchRecommendation.인터벌운동?.length > 0">
             <div class="space-y-3">
               <div 
                 v-for="(interval, idx) in stretchRecommendation.인터벌운동" 
                 :key="idx"
-                class="p-4 bg-gradient-to-r from-green-50 to-blue-50 rounded-lg border border-green-200"
+                class="p-4 bg-green-100 rounded-lg"
               >
-                <div class="flex items-center justify-between mb-2">
-                  <div class="text-md font-bold text-gray-800 font-gowun">{{ interval.루틴명 }}</div>
-                  <span 
-                    :class="[
-                      'text-xs px-2 py-1 rounded-full font-bold',
-                      interval.강도 === 'low' ? 'bg-green-200 text-green-800' :
-                      interval.강도 === 'medium' ? 'bg-yellow-200 text-yellow-800' :
-                      'bg-red-200 text-red-800'
-                    ]"
-                  >
-                    {{ interval.강도 === 'low' ? '낮음' : interval.강도 === 'medium' ? '중간' : '높음' }}
-                  </span>
-                </div>
-                <div class="text-sm text-gray-700 font-gowun mb-2">
-                  {{ interval.설명 }}
-                </div>
-                <div class="flex gap-4 text-xs text-gray-600 font-gowun">
-                  <span>🔢 {{ interval.세트수 }}세트</span>
-                  <span>⏱️ 운동 {{ interval.운동시간분 }}분</span>
-                  <span>😌 휴식 {{ interval.휴식시간분 }}분</span>
+                <div class="text-md font-bold text-green-800 mb-2 font-gowun">{{ interval.루틴명 }}</div>
+                <div class="text-sm text-green-800 font-gowun space-y-1">
+                  <div>세트 수: {{ interval.세트수 }}</div>
+                  <div>운동 시간: {{ interval.운동시간분 }}분</div>
+                  <div>휴식 시간: {{ interval.휴식시간분 }}분</div>
                 </div>
               </div>
             </div>
           </div>
 
           <!-- 주의사항 -->
-          <div v-if="stretchRecommendation.주의사항?.length > 0" class="p-4 bg-red-50 border-l-4 border-red-400 rounded">
-            <h4 class="text-md font-semibold text-red-800 mb-2 font-gowun">⚠️ 주의사항</h4>
-            <ul class="space-y-1">
-              <li 
-                v-for="(caution, idx) in stretchRecommendation.주의사항" 
-                :key="idx"
-                class="text-sm text-red-700 font-gowun"
-              >
-                • {{ caution }}
-              </li>
-            </ul>
+          <div v-if="(stretchRecommendation.주의사항 && stretchRecommendation.주의사항.length > 0) || (stretchRecommendation.인터벌운동?.length > 0 && stretchRecommendation.인터벌운동[0].설명)" class="p-3 bg-red-50 border-l-4 border-red-400 rounded">
+            <h4 class="text-sm font-semibold text-red-800 mb-2 font-gowun">
+              주의사항
+              <span v-if="stretchRecommendation.통증부위" class="ml-2 px-2 py-1 bg-orange-500 text-white rounded-md text-xs">
+                통증 부위: {{ stretchRecommendation.통증부위 }}
+              </span>
+            </h4>
+            <div class="text-sm text-red-700 font-gowun space-y-2">
+              <!-- AI가 추천한 주의사항 목록 -->
+              <div v-if="stretchRecommendation.주의사항 && stretchRecommendation.주의사항.length > 0">
+                <ul class="list-disc list-inside space-y-1">
+                  <li v-for="(caution, idx) in stretchRecommendation.주의사항" :key="idx">
+                    {{ caution }}
+                  </li>
+                </ul>
+              </div>
+              <!-- 인터벌 운동 설명 -->
+              <div v-if="stretchRecommendation.인터벌운동?.length > 0 && stretchRecommendation.인터벌운동[0].설명">
+                {{ stretchRecommendation.인터벌운동[0].설명 }}
+              </div>
+            </div>
           </div>
 
           <!-- 실패 메시지 -->
           <div v-if="stretchRecommendation.실패이유" class="p-4 bg-gray-100 rounded">
             <div class="text-sm text-gray-600 font-gowun">
-              ℹ️ {{ stretchRecommendation.실패이유 }}
+              {{ stretchRecommendation.실패이유 }}
             </div>
+          </div>
+
+          <!-- 처방에 적용 버튼 -->
+          <div v-if="stretchRecommendation.인터벌운동?.length > 0" class="pt-2">
+            <AppButton 
+              @click="applyRecommendationToPrescription" 
+              variant="solid"
+              class="w-full bg-purple-600 hover:bg-purple-700 text-white"
+            >
+              <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              </svg>
+              이 추천을 운동 처방에 적용하기
+            </AppButton>
           </div>
         </div>
 
@@ -796,6 +792,7 @@ const loadStretchRecommendation = async () => {
     return
   }
 
+  console.log('🔍 AI 추천 요청 시작 - userCode:', user.value.userCode)
   stretchLoading.value = true
   stretchRecommendation.value = null
 
@@ -803,12 +800,72 @@ const loadStretchRecommendation = async () => {
     const result = await getStretchRecommendation(user.value.userCode)
     stretchRecommendation.value = result
     console.log('✅ AI 운동 추천 완료:', result)
+    console.log('📹 스트레칭영상 개수:', result.스트레칭영상?.length || 0)
+    console.log('📹 스트레칭영상 상세:', JSON.stringify(result.스트레칭영상, null, 2))
+    console.log('🏃 인터벌운동 개수:', result.인터벌운동?.length || 0)
+    console.log('🏃 인터벌운동 상세:', JSON.stringify(result.인터벌운동, null, 2))
+    console.log('🎯 통증부위:', result.통증부위)
+    console.log('⚠️ 주의사항:', result.주의사항)
+    
+    if (!result.스트레칭영상 || result.스트레칭영상.length === 0) {
+      console.warn('⚠️ 스트레칭 영상이 비어있습니다!')
+      console.warn('⚠️ 전체 응답 데이터:', JSON.stringify(result, null, 2))
+      if (result.실패이유) {
+        console.error('❌ 실패 이유:', result.실패이유)
+      }
+    } else {
+      console.log('✅ 스트레칭 영상 정상적으로 받아왔습니다!')
+      result.스트레칭영상.forEach((video, idx) => {
+        console.log(`  ${idx + 1}. ${video.제목}: ${video.영상주소}`)
+      })
+    }
   } catch (error) {
     console.error('❌ AI 운동 추천 실패:', error)
-    alert('AI 운동 추천에 실패했습니다. OpenAI API 키를 확인해주세요.')
+    alert('AI 운동 추천에 실패했습니다. 콘솔을 확인해주세요.')
   } finally {
     stretchLoading.value = false
   }
+}
+
+// AI 추천 결과를 처방 폼에 자동으로 적용
+const applyRecommendationToPrescription = () => {
+  if (!stretchRecommendation.value) {
+    alert('적용할 추천 데이터가 없습니다.')
+    return
+  }
+
+  const videos = stretchRecommendation.value.스트레칭영상 || []
+  const intervals = stretchRecommendation.value.인터벌운동 || []
+
+  // 스트레칭 영상 URL 적용
+  if (videos.length > 0) {
+    prescriptionForm.startStretchingUrl = videos[0].영상주소 || ''
+  }
+  if (videos.length > 1) {
+    prescriptionForm.endStretchingUrl = videos[1].영상주소 || ''
+  }
+
+  // 인터벌 운동 정보 적용
+  if (intervals.length > 0) {
+    const interval = intervals[0]
+    
+    // 운동시간분 = 뛰기, 휴식시간분 = 걷기
+    prescriptionForm.runningMinutes = interval.운동시간분 || 0
+    prescriptionForm.walkingMinutes = interval.휴식시간분 || 0
+    prescriptionForm.sets = interval.세트수 || 0
+  }
+
+  console.log('✅ AI 추천을 처방 폼에 적용했습니다:', prescriptionForm)
+  
+  // 처방 폼이 있는 곳으로 스크롤
+  setTimeout(() => {
+    const prescriptionSection = document.querySelector('form')
+    if (prescriptionSection) {
+      prescriptionSection.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    }
+  }, 100)
+  
+  alert('✅ AI 추천이 운동 처방 폼에 적용되었습니다!')
 }
 
 // 주기적으로 채팅 메시지 업데이트 (5초마다)

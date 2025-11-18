@@ -161,6 +161,7 @@
             <p class="text-xs text-gray-400 font-gowun">센서 연결 대기 중...</p>
           </div>
           <div class="space-y-2">
+            <AppButton @click="reconnectBluetooth" variant="solid" class="w-full">블루투스 재연결</AppButton>
             <RouterLink to="/user/survey/result">
               <AppButton variant="ghost" class="w-full">설문 결과 보기</AppButton>
             </RouterLink>
@@ -336,6 +337,7 @@ import { getPendingPrescription, acceptPrescription, declinePrescription, getPre
 import type { SurveyRequest } from '@/services/api/surveyRequests'
 import { getSproutCount, earnSprout, spendSprouts } from '@/services/api/sprouts'
 import { upsertLocation } from '@/services/api/locations'
+import http from '@/services/api/http'
 
 const router = useRouter()
 const { position } = useGeo()
@@ -698,9 +700,16 @@ const startLocationTracking = (userId: string) => {
   // 실시간 위치 추적
   navigator.geolocation.watchPosition(
     (pos) => {
-      const { latitude, longitude } = pos.coords
-      console.log('📍 현재 위치:', latitude, longitude, '정확도:', pos.coords.accuracy, 'm')
+      const { latitude, longitude, accuracy } = pos.coords
+      console.log('📍 현재 위치:', latitude, longitude, '정확도:', accuracy, 'm')
       
+      // ✅ 정확도 필터링: 100m 이상은 무시
+      if (accuracy && accuracy > 100) {
+        console.warn('⚠️ 정확도 너무 낮음 (', accuracy, 'm) - 위치 업데이트 스킵')
+        return
+      }
+      
+      console.log('✅ 정확도 양호 -', accuracy, 'm - 위치 전송')
       // 즉시 한 번 전송
       sendLocation(latitude, longitude)
     },
@@ -719,8 +728,16 @@ const startLocationTracking = (userId: string) => {
   setInterval(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
-        const { latitude, longitude } = pos.coords
-        console.log('📍 주기적 위치 업데이트:', latitude, longitude, '정확도:', pos.coords.accuracy, 'm')
+        const { latitude, longitude, accuracy } = pos.coords
+        console.log('📍 주기적 위치 업데이트:', latitude, longitude, '정확도:', accuracy, 'm')
+        
+        // ✅ 정확도 필터링: 100m 이상은 무시
+        if (accuracy && accuracy > 100) {
+          console.warn('⚠️ 정확도 너무 낮음 (', accuracy, 'm) - 주기 업데이트 스킵')
+          return
+        }
+        
+        console.log('✅ 정확도 양호 -', accuracy, 'm - 주기 전송')
         sendLocation(latitude, longitude)
       },
       (err) => {
@@ -1183,6 +1200,25 @@ const buyItem = async (item: { id: number; name: string; price: number }) => {
 
 const closeShopPopup = () => {
   showShopPopup.value = false
+}
+
+// 블루투스 재연결
+const reconnectBluetooth = async () => {
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
+    alert('사용자 정보를 확인할 수 없습니다.')
+    return
+  }
+
+  try {
+    console.log('🔵 블루투스 재연결 요청 중...')
+    await http.post(`/api/bluetooth/reconnect`, { userId })
+    console.log('✅ 블루투스 재연결 요청 완료')
+    alert('블루투스 재연결 요청이 완료되었습니다.')
+  } catch (error: any) {
+    console.error('❌ 블루투스 재연결 실패:', error)
+    alert('블루투스 재연결에 실패했습니다.')
+  }
 }
 </script>
 
