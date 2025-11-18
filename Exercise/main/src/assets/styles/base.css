@@ -1,0 +1,55 @@
+:root {
+  /* 베이지, 회색, 연두색 조합 디자인 시스템 */
+  --bg-primary: #FFFFFF;
+  --bg-secondary: #F5F5F0;
+  --bg-white: #FFFFFF;
+  --bg-card: #FEFEFE;
+  --bg-beige: #F7F5F3;
+  
+  --color-primary: #8BC34A;
+  --color-primary-hover: #7CB342;
+  --color-secondary: #9E9E9E;
+  --color-accent: #D7CCC8;
+  
+  --text-main: #424242;
+  --text-sub: #757575;
+  --text-light: #BDBDBD;
+  --text-accent: #6D4C41;
+  
+  --border-color: #E0E0E0;
+  --border-light: #F5F5F5;
+  --border-accent: #D7CCC8;
+  
+  --shadow-soft: 0 2px 8px rgba(0,0,0,0.04);
+  --shadow-medium: 0 4px 12px rgba(0,0,0,0.06);
+  --shadow-accent: 0 2px 8px rgba(139, 195, 74, 0.1);
+  --border-radius: 12px;
+}
+
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: 'Gowun Dodum', sans-serif;
+  background-color: var(--bg-primary);
+  color: var(--text-sub);
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: hidden;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+/* 모바일 최적화 */
+@media (max-width: 768px) {
+  body {
+    font-size: 14px;
+  }
+}
+

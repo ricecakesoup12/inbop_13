@@ -1,0 +1,52 @@
+[33mcommit 5b1cf8c4dc447ef7be00f0b3fc7f38016fe32b76[m[33m ([m[1;36mHEAD[m[33m -> [m[1;32mtest[m[33m)[m
+Author: Jaeyoon <l2e.ajyoon@gmail.com>
+Date:   Tue Nov 4 10:12:00 2025 +0900
+
+    주소 및 프론트엔드 UIUX 수정
+
+ Exercise/main/ENV_TEMPLATE.md                      |  37 [32m++[m
+ Exercise/main/public/images/female-1.png           | Bin [31m0[m -> [32m1358122[m bytes
+ Exercise/main/public/images/female-2.png           | Bin [31m0[m -> [32m1724288[m bytes
+ Exercise/main/public/images/female-3.png           | Bin [31m0[m -> [32m1446580[m bytes
+ Exercise/main/public/images/female-4.png           | Bin [31m0[m -> [32m1717382[m bytes
+ Exercise/main/public/images/female-5.png           | Bin [31m0[m -> [32m1589777[m bytes
+ Exercise/main/public/images/male-1.png             | Bin [31m0[m -> [32m1865921[m bytes
+ Exercise/main/public/images/male-2.png             | Bin [31m0[m -> [32m1514016[m bytes
+ Exercise/main/public/images/male-3.png             | Bin [31m0[m -> [32m1313614[m bytes
+ Exercise/main/public/images/male-4.png             | Bin [31m0[m -> [32m1175774[m bytes
+ Exercise/main/public/images/male-5.png             | Bin [31m0[m -> [32m1291688[m bytes
+ .../src/components/charts/WeightTrendChart.vue     |   2 [32m+[m[31m-[m
+ Exercise/main/src/pages/guardian/GuardianHome.vue  | 207 [32m++++++++++[m[31m-[m
+ Exercise/main/src/pages/guardian/UserDetail.vue    | 224 [32m+++++++++++[m[31m-[m
+ Exercise/main/src/pages/user/LiveMap.vue           | 363 [32m++++++++++++++++++++[m
+ Exercise/main/src/pages/user/UserDashboard.vue     | 377 [32m++++++++++++++++++++[m[31m-[m
+ Exercise/main/src/router/index.ts                  |   5 [32m+[m
+ Exercise/main/src/services/api/exerciseStatus.ts   |   1 [32m+[m
+ Exercise/main/src/services/api/locations.ts        |  31 [32m++[m
+ Exercise/main/src/services/api/weightRecords.ts    |   1 [32m+[m
+ Exercise/main/src/services/realtime/socket.ts      |  31 [32m+[m[31m-[m
+ Exercise/main/src/types/user.ts                    |   1 [32m+[m
+ Exercise/main/src/utils/loadNaverMap.ts            | 109 [32m++++++[m
+ Exercise/main/src/vite-env.d.ts                    |   9 [32m+[m
+ .../vue/16/solid/esm/AdjustmentsVerticalIcon.js    |   2 [32m+[m
+ Exercise/src/views/HealthSurvey.vue                |   0
+ LOCATION_TRACKING_GUIDE.md                         | 213 [32m++++++++++++[m
+ data/exercisedb.mv.db                              | Bin [31m36864[m -> [32m106496[m bytes
+ data/exercisedb.trace.db                           |   6 [32m+[m
+ src/main/java/inbop/_group/ExerciseStatus.java     |   1 [32m+[m
+ .../inbop/_group/ExerciseStatusController.java     |   1 [32m+[m
+ .../inbop/_group/ExerciseStatusRepository.java     |   1 [32m+[m
+ src/main/java/inbop/_group/LocationController.java |  40 [32m+++[m
+ src/main/java/inbop/_group/LocationDto.java        |  45 [32m+++[m
+ src/main/java/inbop/_group/LocationStore.java      |  25 [32m++[m
+ src/main/java/inbop/_group/Survey.java             |   1 [32m+[m
+ src/main/java/inbop/_group/SurveyRepository.java   |   1 [32m+[m
+ src/main/java/inbop/_group/SurveyRequest.java      |   1 [32m+[m
+ .../java/inbop/_group/SurveyRequestRepository.java |   1 [32m+[m
+ src/main/java/inbop/_group/User.java               |   3 [32m+[m
+ src/main/java/inbop/_group/UserController.java     |  76 [32m++++[m[31m-[m
+ src/main/java/inbop/_group/WebConfig.java          |  21 [32m++[m
+ src/main/java/inbop/_group/WeightRecord.java       |   1 [32m+[m
+ .../java/inbop/_group/WeightRecordController.java  |   1 [32m+[m
+ .../java/inbop/_group/WeightRecordRepository.java  |   1 [32m+[m
+ 45 files changed, 1810 insertions(+), 29 deletions(-)
