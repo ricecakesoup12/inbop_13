@@ -1,6 +1,9 @@
 package inbop._group.sensor_api;
 
+import java.io.BufferedReader;
 import java.io.IOException;
+import java.io.InputStreamReader;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDateTime;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -33,8 +36,11 @@ public class SerialReaderService {
     @Value("${serial.port:COM4}")
     private String portName;
 
-    @Value("${serial.baud:115200}")
-    private int baud;
+    @Value("${bt.serial.port:COM4}")
+    private String btPortName;
+
+    @Value("${serial.baud:9600}")
+    private int baudRate;
 
     @Value("${serial.userId:1}")  // 기본 사용자 ID (설정 파일에서 변경 가능)
     private Long defaultUserId;
@@ -45,9 +51,12 @@ public class SerialReaderService {
     @Autowired
     private ObjectMapper objectMapper;
 
+
+    private final ExecutorService executor = Executors.newSingleThreadExecutor();
     private SerialPort port;
     private ExecutorService readerPool;
     private volatile boolean running = false;
+    private BufferedReader reader;
 
     // 최근 센서 데이터 (JSON 형식)
     private final AtomicReference<Map<String, Object>> lastSensorData = new AtomicReference<>(new HashMap<>());
@@ -61,6 +70,55 @@ public class SerialReaderService {
                 .toList();
     }
 
+    @PostConstruct
+    public void init() {
+        System.out.println("BTSerialReader init...");
+        openPortOnce(); // 한 번만 시도
+        /*
+        while (!running) {
+            openAndStart();
+        }
+         */
+    }
+
+    /**
+     * 연결 상태 외부에서 확인 가능
+     */
+    public boolean isConnected() {
+        return running;
+    }
+
+    public reactor.core.publisher.Flux<String> flux() {
+        return sink.asFlux();
+    }
+
+    /**
+     * 블루투스 포트 1회 오픈 시도
+     */
+    private void openPortOnce() {
+        port = SerialPort.getCommPort(btPortName);
+        port.setBaudRate(baudRate);
+        port.setNumDataBits(8);
+        port.setNumStopBits(SerialPort.ONE_STOP_BIT);
+        port.setParity(SerialPort.NO_PARITY);
+        port.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 2000, 0);
+
+        if (!port.openPort()) {
+            System.out.println("[BT] Could not open serial port: " + btPortName);
+            running = false;
+            return; // 더 이상 시도하지 않음
+        }
+
+        System.out.println("[BT] Port opened: " + btPortName);
+        reader = new BufferedReader(
+                new InputStreamReader(port.getInputStream(), StandardCharsets.UTF_8));
+
+        running = true;
+        executor.submit(this::readLoop);
+    }
+
+
+    /* 유선
     @PostConstruct
     public void start() {
         log.info("Available serial ports: {}", String.join(", ", listPorts()));
@@ -92,6 +150,7 @@ public class SerialReaderService {
         });
         readerPool.submit(this::readLoop);
     }
+    */
 
     private void readLoop() {
         final var in = port.getInputStream();
@@ -129,11 +188,11 @@ public class SerialReaderService {
         try {
             // JSON 파싱
             Map<String, Object> sensorData = objectMapper.readValue(rawData, Map.class);
-            
+
             // HR과 SpO2 추출
             Integer hr = extractValue(sensorData, "hr", "HR", "heartRate", "bpm");
             Integer spo2 = extractValue(sensorData, "spo2", "SpO2", "spO2", "oxygen");
-            
+
             if (hr == null || spo2 == null) {
                 log.warn("센서 데이터에 HR 또는 SpO2가 없습니다: {}", rawData);
                 return;
@@ -187,7 +246,7 @@ public class SerialReaderService {
             record.setHr(hr);
             record.setSpo2(spo2);
             record.setRecordedAt(LocalDateTime.now());
-            
+
             vitalRecordRepository.save(record);
             log.debug("💾 DB 저장 완료: userId={}, hr={}, spo2={}", defaultUserId, hr, spo2);
         } catch (Exception e) {
@@ -207,7 +266,7 @@ public class SerialReaderService {
         Map<String, Object> status = new HashMap<>();
         status.put("connected", port != null && port.isOpen());
         status.put("portName", portName);
-        status.put("baud", baud);
+        status.put("baud", baudRate);
         status.put("running", running);
         status.put("hasData", !lastSensorData.get().isEmpty());
         status.put("lastData", lastSensorData.get());
@@ -225,4 +284,3 @@ public class SerialReaderService {
         }
     }
 }
-
