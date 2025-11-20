@@ -122,11 +122,11 @@ const fallbackReverseGeocode = async (latitude: number, longitude: number): Prom
     }
     
     // Fallback 기본 주소
-    return '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
+    return '수원대학교 경기도 화성시 봉담읍 와우안길 17 미래혁신관';
   } catch (error) {
     console.error('OSM Reverse Geocoding 오류:', error);
     // 오류 발생 시에도 기본 주소 반환
-    return '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
+    return '수원대학교 경기도 화성시 봉담읍 와우안길 17 미래혁신관';
   }
 };
 
@@ -351,18 +351,43 @@ onMounted(async () => {
       }
       
       // 지도 없이 GPS 위치만 추적
+      const MAX_ACCURACY = 50; // m 단위
+      let lastGoodPosition: { latitude: number; longitude: number } | null = null;
+      const hasValidLocation = ref(false); // 처음에 false → 좋은 값 들어오면 true로
+      
       if ('geolocation' in navigator) {
         watchId = navigator.geolocation.watchPosition(
           async (pos) => {
             const { latitude, longitude, accuracy } = pos.coords;
             
-            // ✅ 정확도 필터링: 100m 이상은 무시
-            if (accuracy && accuracy > 100) {
-              console.warn('⚠️ GPS 정확도 너무 낮음 (', accuracy, 'm) - 위치 업데이트 스킵');
+            console.log('📡 geolocation 콜백 (GPS 전용):', latitude, longitude, '정확도:', accuracy);
+            
+            // 1) 정확도 체크
+            if (!accuracy || accuracy > MAX_ACCURACY) {
+              console.warn(`⚠️ 정확도 너무 나쁨 (${accuracy}m > ${MAX_ACCURACY}m), 값 무시`);
+              
+              // 아직 한 번도 쓸만한 값을 못 받은 상태면 → 그냥 "위치 잡는 중" 상태 유지
+              if (!hasValidLocation.value) {
+                console.log('⏳ 아직 유효한 위치를 받지 못했습니다. 위치 잡는 중...');
+                isTracking.value = false; // "위치 추적 대기 중" 상태
+                const addrDisplay = document.getElementById('addr-display');
+                if (addrDisplay) {
+                  addrDisplay.textContent = '위치 잡는 중...';
+                }
+                return;
+              }
+              
+              // 이미 예전에 lastGoodPosition이 있으면
+              // 굳이 화면을 쓰레기 값으로 덮을 필요 없음 → 그냥 유지
+              console.log('✅ 이전 유효 위치 유지 (쓰레기 값 무시)');
               return;
             }
             
-            console.log('✅ GPS 정확도 양호 -', accuracy, 'm');
+            // 2) 여기까지 왔다는 건 "쓸만한 위치"라는 뜻
+            lastGoodPosition = { latitude, longitude };
+            hasValidLocation.value = true;
+            
+            console.log(`✅ 유효한 위치 수신! 정확도: ${accuracy}m`);
             
             // 상태 업데이트
             isTracking.value = true;
@@ -459,18 +484,39 @@ onMounted(async () => {
     console.log('✅ 마커 생성 완료');
 
     // 6. 위치 추적 시작
+    const MAX_ACCURACY = 50; // m 단위. 원하시면 100~200으로 늘려도 됨
+    let lastGoodPosition: { latitude: number; longitude: number } | null = null;
+    const hasValidLocation = ref(false); // 처음에 false → 좋은 값 들어오면 true로
+    
     if ('geolocation' in navigator) {
       watchId = navigator.geolocation.watchPosition(
         async (pos) => {
           const { latitude, longitude, accuracy } = pos.coords;
           
-          // ✅ 정확도 필터링: 100m 이상은 무시
-          if (accuracy && accuracy > 100) {
-            console.warn('⚠️ 지도 정확도 너무 낮음 (', accuracy, 'm) - 지도 업데이트 스킵');
+          console.log('📡 geolocation 콜백:', latitude, longitude, '정확도:', accuracy);
+          
+          // 1) 정확도 체크
+          if (!accuracy || accuracy > MAX_ACCURACY) {
+            console.warn(`⚠️ 정확도 너무 나쁨 (${accuracy}m > ${MAX_ACCURACY}m), 값 무시`);
+            
+            // 아직 한 번도 쓸만한 값을 못 받은 상태면 → 그냥 "위치 잡는 중" 상태 유지
+            if (!hasValidLocation.value) {
+              console.log('⏳ 아직 유효한 위치를 받지 못했습니다. 위치 잡는 중...');
+              isTracking.value = false; // "위치 추적 대기 중" 상태
+              return;
+            }
+            
+            // 이미 예전에 lastGoodPosition이 있으면
+            // 굳이 지도/주소를 쓰레기 값으로 덮을 필요 없음 → 그냥 유지
+            console.log('✅ 이전 유효 위치 유지 (쓰레기 값 무시)');
             return;
           }
           
-          console.log('✅ 지도 정확도 양호 -', accuracy, 'm - 지도 업데이트');
+          // 2) 여기까지 왔다는 건 "쓸만한 위치"라는 뜻
+          lastGoodPosition = { latitude, longitude };
+          hasValidLocation.value = true;
+          
+          console.log(`✅ 유효한 위치 수신! 정확도: ${accuracy}m`);
           
           const latlng = new nmaps.LatLng(latitude, longitude);
           
@@ -523,14 +569,17 @@ onMounted(async () => {
                   console.log('✅ 현재 주소:', address);
                 } else {
                   console.warn('⚠️ 주소를 가져올 수 없습니다. 기본 주소를 사용합니다.');
-                  currentAddress.value = '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
+                  currentAddress.value = '수원대학교 경기도 화성시 봉담읍 와우안길 17 미래혁신관';
                 }
               } catch (error) {
                 console.error('❌ 주소 변환 오류:', error);
-                currentAddress.value = '경기도 화성시 봉담읍 와우안길 17 미래혁신관 111호';
+                currentAddress.value = '수원대학교 경기도 화성시 봉담읍 와우안길 17 미래혁신관';
               }
             }, 500);
           }
+          
+          // 서버로 위치 전송
+          await sendMyLocation(latitude, longitude);
         },
         (err) => {
           console.warn('위치 접근 오류:', err);

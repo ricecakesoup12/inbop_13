@@ -4,7 +4,6 @@ const API_BASE = import.meta.env.VITE_API_BASE || 'http://localhost:8081'
 
 export interface SensorData {
   hr: number
-  spo2: number
   timestamp: number
   raw?: string
 }
@@ -71,7 +70,6 @@ export async function getSensorStatus(): Promise<SensorStatus> {
 export function convertToVitalNow(sensorData: SensorData): VitalNow {
   return {
     hr: sensorData.hr,
-    spo2: sensorData.spo2,
     active: false, // 센서에서 운동 상태는 별도로 판단 필요
     ts: new Date(sensorData.timestamp).toISOString()
   }

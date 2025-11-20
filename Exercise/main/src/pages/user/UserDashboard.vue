@@ -101,19 +101,15 @@
                 시작 스트레칭 {{ activePrescription.startStretchingMinutes }}분
               </button>
               
-              <!-- 인터벌 운동 버튼들 (세트 수만큼) -->
-              <div class="space-y-2">
-                <template v-for="setNum in activePrescription.sets">
-                  <button 
-                    v-if="!exerciseCompleted.intervals[setNum - 1]"
-                    :key="setNum"
-                    @click="completeInterval(setNum - 1)"
-                    class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
-                  >
-                    인터벌 {{ setNum }}세트: 걷기 {{ activePrescription.walkingMinutes }}분 → 뛰기 {{ activePrescription.runningMinutes }}분
-                  </button>
-                </template>
-              </div>
+              <!-- 인터벌 운동 버튼 (하나만 표시) -->
+              <button 
+                v-if="hasIncompleteIntervals"
+                @click="completeNextInterval"
+                class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+              >
+                인터벌 운동: 걷기 {{ activePrescription.walkingMinutes }}분 → 뛰기 {{ activePrescription.runningMinutes }}분
+                ({{ completedIntervalCount }}/{{ activePrescription.sets }}세트 완료)
+              </button>
               
               <!-- 마무리 스트레칭 버튼 -->
               <button 
@@ -148,13 +144,6 @@
                 {{ (vital.hr && vital.hr > 0) ? vital.hr : '-' }}
               </span>
               <span class="text-xs text-text-sub font-gowun">bpm</span>
-            </div>
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-text-sub font-gowun">SpO₂</span>
-              <span class="text-2xl font-bold font-gowun" :class="(vital.spo2 && vital.spo2 > 0) ? 'text-primary' : 'text-gray-400'">
-                {{ (vital.spo2 && vital.spo2 > 0) ? vital.spo2 : '-' }}
-              </span>
-              <span class="text-xs text-text-sub font-gowun">%</span>
             </div>
           </div>
           <div v-if="!vital.hr || vital.hr === 0" class="mb-2 text-center">
@@ -347,12 +336,190 @@ const usersStore = useUsersStore()
 // 현재 주소
 const currentAddress = ref<string>('')
 
+// OSM Nominatim Fallback (비인증, 도로명 유사 주소)
+const fallbackReverseGeocode = async (latitude: number, longitude: number): Promise<string | null> => {
+  try {
+    const url = `https://nominatim.openstreetmap.org/reverse?lat=${latitude}&lon=${longitude}&format=json&accept-language=ko&addressdetails=1`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'inbop-app/1.0 (educational)' } });
+    if (!res.ok) return null;
+    const data = await res.json();
+    
+    // 한국어 주소 우선 구성
+    if (data.address) {
+      const addr = data.address;
+      const parts: string[] = [];
+      
+      // 시/도
+      if (addr.state || addr.region) {
+        parts.push(addr.state || addr.region);
+      }
+      // 시/군/구
+      if (addr.city || addr.county || addr.district) {
+        parts.push(addr.city || addr.county || addr.district);
+      }
+      // 동/면/읍
+      if (addr.town || addr.village || addr.neighbourhood || addr.suburb) {
+        parts.push(addr.town || addr.village || addr.neighbourhood || addr.suburb);
+      }
+      // 도로명
+      if (addr.road) {
+        parts.push(addr.road);
+      }
+      // 건물 번호
+      if (addr.house_number) {
+        parts.push(addr.house_number + '번');
+      }
+      
+      if (parts.length > 0) {
+        return parts.join(' ');
+      }
+    }
+    
+    // fallback: display_name 사용
+    const displayName = data.display_name || null;
+    if (displayName) {
+      const koreanParts = displayName.split(',').map((s: string) => s.trim()).filter((s: string) => s.length > 0);
+      if (koreanParts.length >= 2) {
+        return koreanParts.slice(-3).join(' ');
+      }
+      return displayName;
+    }
+    
+    // Fallback 기본 주소
+    return '수원대학교 경기도 화성시 봉담읍 와우안길 17 미래혁신관';
+  } catch (error) {
+    console.error('OSM Reverse Geocoding 오류:', error);
+    return '수원대학교 경기도 화성시 봉담읍 와우안길 17 미래혁신관';
+  }
+};
+
+// Reverse Geocoding: 좌표를 주소로 변환 (도로명 주소 우선)
+const reverseGeocode = async (latitude: number, longitude: number): Promise<string | null> => {
+  // 좌표 유효성 검사
+  if (!isFinite(latitude) || !isFinite(longitude)) {
+    console.error('❌ 잘못된 좌표:', latitude, longitude);
+    return await fallbackReverseGeocode(latitude, longitude);
+  }
+
+  try {
+    const nmaps = (window as any).naver?.maps;
+    
+    if (!nmaps || !nmaps.Service) {
+      console.warn('⚠️ 네이버 지도 Service가 로드되지 않았습니다. → OSM Fallback 시도');
+      return await fallbackReverseGeocode(latitude, longitude);
+    }
+    
+    // 역지오코딩 기능이 비활성(인증 실패 등)인 경우 바로 중단
+    if (typeof nmaps.Service.reverseGeocode !== 'function') {
+      console.warn('⚠️ reverseGeocode 사용 불가: 인증 실패 또는 권한 미설정 → OSM Fallback 시도');
+      return await fallbackReverseGeocode(latitude, longitude);
+    }
+
+    console.log('🔍 네이버 Reverse Geocoding 시도:', latitude, longitude);
+
+    return new Promise((resolve) => {
+      try {
+        const latlng = new nmaps.LatLng(latitude, longitude);
+        const reverseGeocodeOptions: any = {
+          coords: latlng,
+          orders: 'roadaddr,addr',
+          lang: 'ko'
+        };
+
+        // coordType 상수가 존재하는 환경에서만 설정 (방어 코드)
+        if (nmaps?.Service?.CoordType?.LAT_LNG) {
+          reverseGeocodeOptions.coordType = nmaps.Service.CoordType.LAT_LNG;
+        } else if (nmaps?.Service?.CoordType?.NAVER) {
+          reverseGeocodeOptions.coordType = nmaps.Service.CoordType.NAVER;
+        }
+
+        nmaps.Service.reverseGeocode(
+          reverseGeocodeOptions,
+          (status: any, response: any) => {
+            // Status.OK 확인 (문자열/숫자 모두 체크)
+            const isOK = status === nmaps.Service.Status.OK || 
+                        status === 0 || 
+                        (typeof status === 'string' && status.toLowerCase() === 'ok');
+            
+            if (isOK && response?.v2) {
+              const v2: any = response.v2;
+              
+              // 1) v2.address 우선 (신규 스펙)
+              const direct = v2.address?.roadAddress || v2.address?.jibunAddress;
+              if (direct) {
+                console.log('✅ 네이버 주소 변환 성공(v2.address):', direct);
+                resolve(direct);
+                return;
+              }
+              
+              // 2) v2.results 파싱 (roadaddr 우선)
+              if (Array.isArray(v2.results) && v2.results.length > 0) {
+                const preferred = v2.results.find((r: any) => r.name === 'roadaddr') || v2.results[0];
+                const region = preferred.region || {};
+                const land = preferred.land || {};
+                const parts: string[] = [];
+                if (region.area1?.name) parts.push(region.area1.name);
+                if (region.area2?.name) parts.push(region.area2.name);
+                if (region.area3?.name) parts.push(region.area3.name);
+                if (preferred.name === 'roadaddr' && land.name) {
+                  parts.push(land.name);
+                  if (land.number1) parts.push(land.number1 + (land.number2 ? '-' + land.number2 : ''));
+                }
+                if (land.addition0?.type === 'building' && land.addition0?.value) parts.push(land.addition0.value);
+                const joined = parts.filter(Boolean).join(' ');
+                if (joined) {
+                  console.log('✅ 네이버 주소 변환 성공(v2.results):', joined);
+                  resolve(joined);
+                  return;
+                }
+              }
+              
+              // 3) 구형 스펙: v2.addresses
+              if (Array.isArray(v2.addresses) && v2.addresses.length > 0) {
+                const address = v2.addresses[0];
+                const result = address.roadAddress || address.jibunAddress || address.address;
+                if (result) {
+                  console.log('✅ 네이버 주소 변환 성공(v2.addresses):', result);
+                  resolve(result);
+                  return;
+                }
+              }
+              
+              console.warn('⚠️ 네이버 주소 변환 실패: v2.address/v2.results/v2.addresses 모두 사용 불가');
+              fallbackReverseGeocode(latitude, longitude).then(resolve);
+            } else {
+              console.warn('⚠️ 네이버 주소 변환 실패:', !isOK ? `Status가 OK가 아님 (${status})` : 'response.v2가 없음');
+              fallbackReverseGeocode(latitude, longitude).then(resolve);
+            }
+          }
+        );
+      } catch (error: any) {
+        console.error('❌ 네이버 Reverse Geocoding 호출 오류:', error);
+        fallbackReverseGeocode(latitude, longitude).then(resolve);
+      }
+    });
+  } catch (error) {
+    console.error('❌ Reverse Geocoding 전체 실패:', error);
+    // 네이버 실패 시 OSM로 재시도
+    return await fallbackReverseGeocode(latitude, longitude);
+  }
+};
+
 // 주소 변환 함수
 const getAddressFromPosition = async (lat: number, lng: number) => {
   try {
-    currentAddress.value = `📍 위도: ${lat.toFixed(4)}, 경도: ${lng.toFixed(4)}`
+    // 먼저 네이버 지도 API로 시도, 실패하면 OSM 사용
+    const address = await reverseGeocode(lat, lng);
+    if (address) {
+      currentAddress.value = address;
+      console.log('✅ 주소 변환 성공:', address);
+    } else {
+      currentAddress.value = `위도: ${lat.toFixed(4)}, 경도: ${lng.toFixed(4)}`;
+      console.warn('⚠️ 주소를 가져올 수 없어 좌표만 표시');
+    }
   } catch (error) {
-    console.error('주소 변환 실패:', error)
+    console.error('주소 변환 실패:', error);
+    currentAddress.value = `위도: ${lat.toFixed(4)}, 경도: ${lng.toFixed(4)}`;
   }
 }
 
@@ -393,6 +560,19 @@ const exerciseCompleted = ref({
   startStretching: false,
   intervals: [] as boolean[], // 세트별 완료 상태
   endStretching: false
+})
+
+// 완료된 인터벌 세트 수
+const completedIntervalCount = computed(() => {
+  if (!activePrescription.value) return 0
+  return exerciseCompleted.value.intervals.filter(completed => completed).length
+})
+
+// 미완료 인터벌이 있는지 확인
+const hasIncompleteIntervals = computed(() => {
+  if (!activePrescription.value) return false
+  return exerciseCompleted.value.intervals.length < activePrescription.value.sets ||
+    exerciseCompleted.value.intervals.some(completed => !completed)
 })
 
 // 모든 운동 완료 여부 확인
@@ -698,18 +878,36 @@ const startLocationTracking = (userId: string) => {
   }
 
   // 실시간 위치 추적
+  const MAX_ACCURACY = 50 // m 단위. 원하시면 100~200으로 늘려도 됨
+  let lastGoodPosition: { latitude: number; longitude: number } | null = null
+  let hasValidLocation = false // 처음에 false → 좋은 값 들어오면 true로
+  
   navigator.geolocation.watchPosition(
     (pos) => {
       const { latitude, longitude, accuracy } = pos.coords
-      console.log('📍 현재 위치:', latitude, longitude, '정확도:', accuracy, 'm')
+      console.log('📡 geolocation 콜백 (UserDashboard):', latitude, longitude, '정확도:', accuracy)
       
-      // ✅ 정확도 필터링: 100m 이상은 무시
-      if (accuracy && accuracy > 100) {
-        console.warn('⚠️ 정확도 너무 낮음 (', accuracy, 'm) - 위치 업데이트 스킵')
+      // 1) 정확도 체크
+      if (!accuracy || accuracy > MAX_ACCURACY) {
+        console.warn(`⚠️ 정확도 너무 나쁨 (${accuracy}m > ${MAX_ACCURACY}m), 값 무시`)
+        
+        // 아직 한 번도 쓸만한 값을 못 받은 상태면 → 그냥 무시하고 대기
+        if (!hasValidLocation) {
+          console.log('⏳ 아직 유효한 위치를 받지 못했습니다. 위치 잡는 중...')
+          return
+        }
+        
+        // 이미 예전에 lastGoodPosition이 있으면
+        // 굳이 서버 전송을 쓰레기 값으로 덮을 필요 없음 → 그냥 유지
+        console.log('✅ 이전 유효 위치 유지 (쓰레기 값 무시)')
         return
       }
       
-      console.log('✅ 정확도 양호 -', accuracy, 'm - 위치 전송')
+      // 2) 여기까지 왔다는 건 "쓸만한 위치"라는 뜻
+      lastGoodPosition = { latitude, longitude }
+      hasValidLocation = true
+      
+      console.log(`✅ 유효한 위치 수신! 정확도: ${accuracy}m - 위치 전송`)
       // 즉시 한 번 전송
       sendLocation(latitude, longitude)
     },
@@ -725,19 +923,34 @@ const startLocationTracking = (userId: string) => {
   )
 
   // 주기적으로 위치 전송 (30초마다)
+  // 주의: setInterval의 getCurrentPosition은 독립적이므로 위의 hasValidLocation을 공유
   setInterval(() => {
     navigator.geolocation.getCurrentPosition(
       (pos) => {
         const { latitude, longitude, accuracy } = pos.coords
-        console.log('📍 주기적 위치 업데이트:', latitude, longitude, '정확도:', accuracy, 'm')
+        console.log('📡 주기적 위치 업데이트 (UserDashboard):', latitude, longitude, '정확도:', accuracy, 'm')
         
-        // ✅ 정확도 필터링: 100m 이상은 무시
-        if (accuracy && accuracy > 100) {
-          console.warn('⚠️ 정확도 너무 낮음 (', accuracy, 'm) - 주기 업데이트 스킵')
+        // 1) 정확도 체크
+        if (!accuracy || accuracy > MAX_ACCURACY) {
+          console.warn(`⚠️ 정확도 너무 나쁨 (${accuracy}m > ${MAX_ACCURACY}m), 값 무시`)
+          
+          // 아직 한 번도 쓸만한 값을 못 받은 상태면 → 그냥 무시하고 대기
+          if (!hasValidLocation) {
+            console.log('⏳ 아직 유효한 위치를 받지 못했습니다. 위치 잡는 중...')
+            return
+          }
+          
+          // 이미 예전에 lastGoodPosition이 있으면
+          // 굳이 서버 전송을 쓰레기 값으로 덮을 필요 없음 → 그냥 유지
+          console.log('✅ 이전 유효 위치 유지 (쓰레기 값 무시)')
           return
         }
         
-        console.log('✅ 정확도 양호 -', accuracy, 'm - 주기 전송')
+        // 2) 여기까지 왔다는 건 "쓸만한 위치"라는 뜻
+        lastGoodPosition = { latitude, longitude }
+        hasValidLocation = true
+        
+        console.log(`✅ 유효한 위치 수신! 정확도: ${accuracy}m - 주기 전송`)
         sendLocation(latitude, longitude)
       },
       (err) => {
@@ -983,10 +1196,33 @@ const completeStartStretching = async () => {
   await handleAllExercisesCompleted()
 }
 
-// 인터벌 세트 완료
+// 인터벌 세트 완료 (기존 함수 - 호환성 유지)
 const completeInterval = async (setIndex: number) => {
   exerciseCompleted.value.intervals[setIndex] = true
   console.log(`✅ 인터벌 ${setIndex + 1}세트 완료`)
+  await handleAllExercisesCompleted()
+}
+
+// 다음 미완료 인터벌 세트 완료 처리
+const completeNextInterval = async () => {
+  if (!activePrescription.value) return
+  
+  // 인터벌 배열이 초기화되지 않았으면 초기화
+  if (exerciseCompleted.value.intervals.length !== activePrescription.value.sets) {
+    exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(false)
+  }
+  
+  // 첫 번째 미완료 세트 찾기
+  const nextIndex = exerciseCompleted.value.intervals.findIndex(completed => !completed)
+  
+  if (nextIndex === -1) {
+    console.log('✅ 모든 인터벌 세트가 완료되었습니다')
+    return
+  }
+  
+  // 해당 세트 완료 처리
+  exerciseCompleted.value.intervals[nextIndex] = true
+  console.log(`✅ 인터벌 ${nextIndex + 1}세트 완료 (${completedIntervalCount.value}/${activePrescription.value.sets})`)
   await handleAllExercisesCompleted()
 }
 

@@ -8,7 +8,7 @@ import type { Socket } from 'socket.io-client'
 export const useMetricsStore = defineStore('metrics', {
   state: () => ({
     daily: [] as DailyMetrics[],
-    vitalNow: { hr: 0, spo2: 0, active: false, ts: '' } as VitalNow,
+    vitalNow: { hr: 0, active: false, ts: '' } as VitalNow,
     socket: null as Socket | null,
     sensorEventSource: null as EventSource | null,
     sensorConnected: false, // 센서 연결 상태
@@ -75,7 +75,7 @@ export const useMetricsStore = defineStore('metrics', {
 
       // 연결 확인 (5초 후에도 데이터가 없으면 연결 안됨으로 표시)
       setTimeout(() => {
-        if (!this.sensorConnected && this.vitalNow.hr === 0 && this.vitalNow.spo2 === 0) {
+        if (!this.sensorConnected && this.vitalNow.hr === 0) {
           console.warn('⚠️ 센서 연결되지 않음')
         }
       }, 5000)

@@ -85,6 +85,17 @@ public class StretchGenerator {
         List<ChatMessage> recent = lastMessages(allMessages, 30); // 최근 30개만 사용
         
         System.out.println("최근 30개 메시지 개수: " + recent.size());
+        
+        // 디버깅: 실제 sender 값 출력
+        System.out.println("=== 채팅 메시지 디버깅 ===");
+        for (int i = 0; i < recent.size(); i++) {
+            ChatMessage msg = recent.get(i);
+            System.out.println("메시지 " + (i+1) + ":");
+            System.out.println("  sender: [" + msg.getSender() + "]");
+            System.out.println("  senderName: [" + msg.getSenderName() + "]");
+            System.out.println("  message: [" + msg.getMessage() + "]");
+        }
+        System.out.println("========================");
 
         String recentText = recent.stream()
                 .filter(m -> "user".equalsIgnoreCase(m.getSender()))

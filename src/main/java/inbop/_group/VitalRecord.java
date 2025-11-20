@@ -21,9 +21,6 @@ public class VitalRecord {
     private Integer hr;  // 심박수 (bpm)
     
     @Column(nullable = false)
-    private Integer spo2;  // 산소포화도 (%)
-    
-    @Column(nullable = false)
     private LocalDateTime recordedAt;  // 기록 시간
     
     @PrePersist

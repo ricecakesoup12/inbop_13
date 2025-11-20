@@ -424,7 +424,6 @@
       <div class="grid md:grid-cols-2 gap-4">
         <WeightTrendChart :data="dailyData.weight" />
         <HeartRateTrendChart :data="dailyData.hr" />
-        <SpO2TrendChart :data="dailyData.spo2" />
         <ActivityTrendChart :data="dailyData.activity" />
       </div>
     </div>
@@ -503,7 +502,6 @@ import NaverUserLocationMap from '@/components/map/NaverUserLocationMap.vue'
 import UserVitalsNow from '@/components/user/UserVitalsNow.vue'
 import WeightTrendChart from '@/components/charts/WeightTrendChart.vue'
 import HeartRateTrendChart from '@/components/charts/HeartRateTrendChart.vue'
-import SpO2TrendChart from '@/components/charts/SpO2TrendChart.vue'
 import ActivityTrendChart from '@/components/charts/ActivityTrendChart.vue'
 import defaultFace from '@/assets/images/default-face.png'
 
@@ -564,7 +562,6 @@ const dailyData = computed(() => {
   return {
     weight: weightData.length > 0 ? weightData : daily.map((d) => ({ x: d.date, y: d.weight || 0 })),
     hr: daily.map((d) => ({ x: d.date, y: d.avgHr || 0 })),
-    spo2: daily.map((d) => ({ x: d.date, y: d.avgSpO2 || 0 })),
     activity: daily.map((d) => ({ x: d.date, y: d.activity || 0 })),
   }
 })
