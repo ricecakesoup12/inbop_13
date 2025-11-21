@@ -1,6 +1,5 @@
 package inbop._group.path_api;
 
-import com.inboproject.projectstudy.Service.PathService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -41,6 +40,22 @@ public class PathController {
     @GetMapping("/test")
     public Mono<ResponseEntity<String>> getSamplePath() {
         return pathService.getSamplePath()
+                .map(ResponseEntity::ok)
+                .onErrorResume(WebClientResponseException.class, ex ->
+                        Mono.just(ResponseEntity
+                                .status(ex.getStatusCode())
+                                .body(ex.getResponseBodyAsString()))
+                )
+                .onErrorResume(ex ->
+                        Mono.just(ResponseEntity
+                                .internalServerError()
+                                .body("NAVER API call failed: " + ex.getMessage()))
+                );
+    }
+
+    @GetMapping("/test2")
+    public Mono<ResponseEntity<String>> getSamplePath2() {
+        return pathService.getSamplePath2()
                 .map(ResponseEntity::ok)
                 .onErrorResume(WebClientResponseException.class, ex ->
                         Mono.just(ResponseEntity
