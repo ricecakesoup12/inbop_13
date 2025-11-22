@@ -5,56 +5,6 @@
       <div class="UserDashboardHeaderContent">
       <!-- 좌측: 아바타 이미지 -->
       <div class="UserAvatarSection">
-        <!-- 오른쪽 상단 버튼들 -->
-        <div class="UserQuickActions">
-          <!-- 새싹 버튼 (보유 새싹 표시) -->
-          <button
-            class="SproutCountButton"
-            title="보유 새싹"
-            disabled
-          >
-            <div class="text-2xl mb-0.5">🌱</div>
-            <div class="SproutCountText">{{ sproutCount }}</div>
-          </button>
-          
-          <!-- 상점 버튼 -->
-          <a>
-            <button
-              @click="showShopPopup = true"
-              class="OpenShopButton"
-              title="상점 열기"
-            >
-              <svg class="OpenShopButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
-              </svg>
-            </button>
-          </a>
-          
-          <!-- 119 신고 버튼 -->
-          <a href="tel:119">
-            <button
-              class="EmergencyCallButton"
-              title="119 신고"
-            >
-              <svg class="EmergencyCallButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
-              </svg>
-            </button>
-          </a>
-          
-          <!-- 보호자 연락 버튼 -->
-          <a v-if="currentUser?.guardianPhone" :href="`tel:${currentUser.guardianPhone}`">
-            <button
-              class="ContactGuardianButton"
-              title="보호자 연락"
-            >
-              <svg class="ContactGuardianButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
-              </svg>
-            </button>
-          </a>
-        </div>
-        
         <!-- 이미지가 있으면 표시, 없으면 플레이스홀더 -->
         <div v-if="currentAvatarSrc" class="UserAvatarImageWrapper">
           <img 
@@ -76,13 +26,61 @@
         </div>
       </div>
       
+      <!-- 가운데: 새싹/상점/긴급전화 버튼들 -->
+      <div class="UserQuickActions">
+        <!-- 새싹 버튼 (보유 새싹 표시) -->
+        <button
+          class="SproutCountButton"
+          title="보유 새싹"
+          disabled
+        >
+          <div class="text-2xl mb-0.5">🌱</div>
+          <div class="SproutCountText">{{ sproutCount }}</div>
+        </button>
+        
+        <!-- 상점 버튼 -->
+        <a>
+          <button
+            @click="showShopPopup = true"
+            class="OpenShopButton"
+            title="상점 열기"
+          >
+            <svg class="OpenShopButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
+            </svg>
+          </button>
+        </a>
+        
+        <!-- 119 신고 버튼 -->
+        <a href="tel:119">
+          <button
+            class="EmergencyCallButton"
+            title="119 신고"
+          >
+            <svg class="EmergencyCallButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+            </svg>
+          </button>
+        </a>
+        
+        <!-- 보호자 연락 버튼 -->
+        <a v-if="currentUser?.guardianPhone" :href="`tel:${currentUser.guardianPhone}`">
+          <button
+            class="ContactGuardianButton"
+            title="보호자 연락"
+          >
+            <svg class="ContactGuardianButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
+            </svg>
+          </button>
+        </a>
+      </div>
+      
       <!-- 우측: 목표치 표시 -->
       <div class="UserDailyGoalSection">
         <!-- 목표치 표시 (처방 수락 후에만) -->
         <div v-if="hasActivePrescription" class="UserDailyGoalContent">
           <div class="UserDailyGoalContentInner">
-            <div class="DailyExerciseTitle">오늘의 운동 목표</div>
-            
             <!-- 모든 운동 완료 시 -->
             <div v-if="isAllExercisesCompleted" class="DailyExerciseCompleted">
               <div>🌱</div>
@@ -91,6 +89,9 @@
 
             <!-- 운동 버튼들 -->
             <div v-else-if="activePrescription" class="DailyExerciseActions">
+              <!-- 오늘의 운동 목표 제목 (시작 스트레칭 버튼 위에 위치) -->
+              <div class="DailyExerciseTitle">오늘의 운동 목표</div>
+              
               <!-- 시작 스트레칭 버튼 -->
               <button 
                 v-if="!exerciseCompleted.startStretching"
@@ -1236,17 +1237,23 @@ const completeNextInterval = async () => {
     exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(false)
   }
   
-  // 첫 번째 미완료 세트 찾기
-  const nextIndex = exerciseCompleted.value.intervals.findIndex(completed => !completed)
+  // 모든 인터벌 세트를 한 번에 완료 처리
+  exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(true)
+  console.log(`✅ 모든 인터벌 세트 완료 (${activePrescription.value.sets}/${activePrescription.value.sets})`)
   
-  if (nextIndex === -1) {
-    console.log('✅ 모든 인터벌 세트가 완료되었습니다')
-    return
+  // RouteMap 페이지를 새 창으로 열기 (출발지/도착지 쿼리 파라미터 포함)
+  // 기본값: 수원대 정문 -> AK플라자 수원점 (사용자가 나중에 다른 페이지에서 입력할 수 있도록)
+  const start = '126.844856,37.5407361' // 수원대 정문 (기본값)
+  const end = '126.8980711,37.5763214' // AK플라자 수원점 (기본값)
+  const routeUrl = `/user/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+  const newWindow = window.open(routeUrl, '_blank', 'width=1200,height=800')
+  if (!newWindow) {
+    console.warn('⚠️ 팝업이 차단되었을 수 있습니다')
+    alert('팝업 차단을 해제해주세요')
+  } else {
+    console.log('✅ RouteMap 새 창 열림')
   }
   
-  // 해당 세트 완료 처리
-  exerciseCompleted.value.intervals[nextIndex] = true
-  console.log(`✅ 인터벌 ${nextIndex + 1}세트 완료 (${completedIntervalCount.value}/${activePrescription.value.sets})`)
   await handleAllExercisesCompleted()
 }
 

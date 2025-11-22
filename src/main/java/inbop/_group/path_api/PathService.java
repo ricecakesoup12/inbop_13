@@ -1,13 +1,15 @@
 package inbop._group.path_api;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.client.reactive.ReactorClientHttpConnector;
 import org.springframework.stereotype.Service;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.web.reactive.function.client.WebClientResponseException;
+
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import lombok.extern.slf4j.Slf4j;
 import reactor.core.publisher.Mono;
 import reactor.netty.http.client.HttpClient;
 
@@ -18,10 +20,10 @@ public class PathService {
     private final WebClient webClient;
     private final ObjectMapper objectMapper;
 
-    @Value("${MAP_API_KEY}")
+    @Value("${MAP_API_KEY:}")
     private String apiKey;
 
-    @Value("${MAP_API_ID}")
+    @Value("${MAP_API_ID:}")
     private String apiId;
 
     public PathService(ObjectMapper objectMapper) {

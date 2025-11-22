@@ -61,6 +61,11 @@ const routes: RouteRecordRaw[] = [
         name: 'UserSurveyResult',
         component: () => import('@/pages/user/UserSurveyResult.vue'),
       },
+      {
+        path: 'route',
+        name: 'RouteMap',
+        component: () => import('@/components/map/RouteMap.vue'),
+      },
     ],
   },
 ]

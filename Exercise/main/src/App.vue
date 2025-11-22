@@ -16,8 +16,3 @@ onMounted(() => {
 })
 </script>
 
-<style>
-@import './assets/styles/tailwind.css';
-@import './assets/styles/base.css';
-</style>
-
