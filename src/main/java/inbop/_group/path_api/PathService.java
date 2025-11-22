@@ -40,17 +40,23 @@ public class PathService {
      * 네이버 길찾기 API 호출 (리액티브)
      */
     public Mono<String> getDrivingPath(String start, String goal, String option, String waypoint) {
-        log.info("Call Naver Directions: start={}, goal={}, option={}", start, goal, option);
+        log.info("Call Naver Directions: start={}, goal={}, option={}, waypoint={}", start, goal, option, waypoint);
         log.info("API_ID={}, API_KEY length={}", apiId, apiKey != null ? apiKey.length() : null);
 
         return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/map-direction/v1/driving")
-                        .queryParam("start", start)
-                        .queryParam("goal", goal)
-                        .queryParam("option", option)
-                        .queryParam("waypoint", waypoint)
-                        .build())
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/map-direction/v1/driving")
+                            .queryParam("start", start)
+                            .queryParam("goal", goal)
+                            .queryParam("option", option);
+                    
+                    // waypoint가 비어있지 않을 때만 추가
+                    if (waypoint != null && !waypoint.trim().isEmpty()) {
+                        uriBuilder.queryParam("waypoint", waypoint);
+                    }
+                    
+                    return uriBuilder.build();
+                })
                 .header("X-NCP-APIGW-API-KEY-ID", apiId)
                 .header("X-NCP-APIGW-API-KEY", apiKey)
                 .retrieve()
@@ -76,13 +82,19 @@ public class PathService {
 
     public Mono<String> getPathOnly(String start, String goal, String option, String waypoint) {
         return webClient.get()
-                .uri(uriBuilder -> uriBuilder
-                        .path("/map-direction/v1/driving")
-                        .queryParam("start", start)
-                        .queryParam("goal", goal)
-                        .queryParam("option", option)
-                        .queryParam("waypoint", waypoint)
-                        .build())
+                .uri(uriBuilder -> {
+                    uriBuilder.path("/map-direction/v1/driving")
+                            .queryParam("start", start)
+                            .queryParam("goal", goal)
+                            .queryParam("option", option);
+                    
+                    // waypoint가 비어있지 않을 때만 추가
+                    if (waypoint != null && !waypoint.trim().isEmpty()) {
+                        uriBuilder.queryParam("waypoint", waypoint);
+                    }
+                    
+                    return uriBuilder.build();
+                })
                 .header("X-NCP-APIGW-API-KEY-ID", apiId)
                 .header("X-NCP-APIGW-API-KEY", apiKey)
                 .retrieve()

@@ -220,11 +220,25 @@ const loadRoute = async () => {
   }
 
   if (!map.value) {
-    console.warn('지도가 초기화되지 않았습니다. 잠시 후 다시 시도해주세요.')
-    return
+    console.error('❌ 지도가 초기화되지 않았습니다. 지도 초기화를 먼저 시도합니다...')
+    // 지도가 없으면 다시 초기화 시도
+    await initMap()
+    if (!map.value) {
+      console.error('❌ 지도 초기화 실패. 경로를 로드할 수 없습니다.')
+      if (mapEl.value) {
+        mapEl.value.innerHTML = `
+          <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; padding: 20px; background: #f3f4f6;">
+            <p style="color: #666; font-size: 14px; font-weight: 600;">⚠️ 지도 초기화 실패</p>
+            <p style="color: #999; font-size: 12px; text-align: center;">네이버 지도 API를 불러올 수 없습니다.<br/>브라우저 콘솔을 확인해주세요.</p>
+          </div>
+        `
+      }
+      return
+    }
   }
 
   loading.value = true
+  console.log('🛣️ 경로 로드 시작...', { start: start.value, end: end.value })
 
   try {
     // 주소를 좌표로 변환 (필요한 경우)
@@ -233,17 +247,27 @@ const loadRoute = async () => {
     
     // 출발지가 좌표 형식이 아니면 지오코딩
     if (!parseCoordinates(start.value)) {
+      console.log('📍 출발지 지오코딩 시도:', start.value)
       const geocoded = await geocode(start.value)
       if (geocoded) {
         startCoord = geocoded
+        console.log('✅ 출발지 지오코딩 성공:', startCoord)
+      } else {
+        console.error('❌ 출발지 지오코딩 실패:', start.value)
+        throw new Error(`출발지 주소를 좌표로 변환할 수 없습니다: ${start.value}`)
       }
     }
     
     // 도착지가 좌표 형식이 아니면 지오코딩
     if (!parseCoordinates(end.value)) {
+      console.log('📍 도착지 지오코딩 시도:', end.value)
       const geocoded = await geocode(end.value)
       if (geocoded) {
         endCoord = geocoded
+        console.log('✅ 도착지 지오코딩 성공:', endCoord)
+      } else {
+        console.error('❌ 도착지 지오코딩 실패:', end.value)
+        throw new Error(`도착지 주소를 좌표로 변환할 수 없습니다: ${end.value}`)
       }
     }
 
@@ -253,28 +277,63 @@ const loadRoute = async () => {
       option: 'trafast'
     }
 
-    if (waypoint.value) {
+    if (waypoint.value && waypoint.value.trim()) {
       let waypointCoord = waypoint.value
       if (!parseCoordinates(waypoint.value)) {
+        console.log('📍 경유지 지오코딩 시도:', waypoint.value)
         const geocoded = await geocode(waypoint.value)
         if (geocoded) {
           waypointCoord = geocoded
+          console.log('✅ 경유지 지오코딩 성공:', waypointCoord)
+        } else {
+          console.warn('⚠️ 경유지 지오코딩 실패, 경유지 없이 진행:', waypoint.value)
+          // 경유지 지오코딩 실패해도 계속 진행
         }
       }
-      params.waypoint = waypointCoord
+      if (waypointCoord) {
+        params.waypoint = waypointCoord
+      }
     }
 
-    const response = await http.get('/api/path/driving', { params })
+    console.log('📡 백엔드 API 호출 중...', params)
+    console.log('📡 전송할 파라미터:', JSON.stringify(params, null, 2))
+    
+    let response
+    try {
+      response = await http.get('/api/path/driving', { params })
+      console.log('✅ 백엔드 응답 받음:', response.data ? '응답 있음' : '응답 없음')
+    } catch (error: any) {
+      console.error('❌ 백엔드 API 호출 실패:', error)
+      console.error('❌ 에러 상세:', {
+        status: error?.response?.status,
+        statusText: error?.response?.statusText,
+        data: error?.response?.data,
+        message: error?.message
+      })
+      
+      // 백엔드에서 반환한 에러 메시지 표시
+      const errorMessage = error?.response?.data || error?.message || '알 수 없는 오류'
+      throw new Error(`백엔드 API 호출 실패: ${errorMessage}`)
+    }
     
     // 백엔드 응답 파싱 (네이버 API 응답 형태)
     const routeData = typeof response.data === 'string' ? JSON.parse(response.data) : response.data
+    console.log('📊 경로 데이터 구조:', {
+      hasRoute: !!routeData?.route,
+      hasTrafast: !!routeData?.route?.trafast,
+      trafastLength: routeData?.route?.trafast?.length
+    })
     
     // 경로 좌표 추출
     const extractedPoints = extractPathPoints(routeData)
+    console.log('📍 추출된 경로 좌표 개수:', extractedPoints.length)
     
     if (!extractedPoints || extractedPoints.length === 0) {
-      console.error('경로를 찾지 못했습니다.')
-      if (mapEl.value) {
+      console.error('❌ 경로를 찾지 못했습니다. 응답 데이터:', routeData)
+      if (mapEl.value && map.value) {
+        // 지도는 있지만 경로가 없는 경우
+        console.warn('⚠️ 경로 데이터가 없지만 지도는 표시합니다.')
+      } else if (mapEl.value) {
         mapEl.value.innerHTML = `
           <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; padding: 20px; background: #f3f4f6;">
             <p style="color: #666; font-size: 14px; font-weight: 600;">⚠️ 경로를 찾을 수 없습니다</p>
@@ -287,14 +346,39 @@ const loadRoute = async () => {
     }
 
     points.value = extractedPoints
+    console.log('🎨 경로 그리기 시작...')
     drawRoute()
+    console.log('✅ 경로 그리기 완료')
   } catch (error: any) {
-    console.error('경로 로드 실패:', error)
+    console.error('❌ 경로 로드 실패:', error)
+    console.error('❌ 에러 상세 정보:', {
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      message: error?.message,
+      config: error?.config
+    })
+    
+    // 백엔드에서 반환한 에러 메시지 추출
+    let errorMessage = '알 수 없는 오류'
+    if (error?.response?.data) {
+      if (typeof error.response.data === 'string') {
+        errorMessage = error.response.data
+      } else if (error.response.data.message) {
+        errorMessage = error.response.data.message
+      } else {
+        errorMessage = JSON.stringify(error.response.data)
+      }
+    } else if (error?.message) {
+      errorMessage = error.message
+    }
+    
     if (mapEl.value) {
       mapEl.value.innerHTML = `
         <div style="display: flex; align-items: center; justify-content: center; height: 100%; flex-direction: column; gap: 10px; padding: 20px; background: #f3f4f6;">
           <p style="color: #666; font-size: 14px; font-weight: 600;">⚠️ 경로 로드 실패</p>
-          <p style="color: #999; font-size: 12px; text-align: center;">${error?.response?.data || error?.message || '알 수 없는 오류'}</p>
+          <p style="color: #999; font-size: 12px; text-align: center;">${errorMessage}</p>
+          <p style="color: #999; font-size: 11px; text-align: center; margin-top: 10px;">상태 코드: ${error?.response?.status || 'N/A'}</p>
         </div>
       `
     }
@@ -322,6 +406,7 @@ const parseCoordinates = (coordString: string): { lat: number; lng: number } | n
 // ====== 역지오코딩: 좌표를 주소로 변환 ======
 const reverseGeocode = async (latitude: number, longitude: number): Promise<string | null> => {
   if (!isFinite(latitude) || !isFinite(longitude)) {
+    console.warn('⚠️ 유효하지 않은 좌표:', { latitude, longitude })
     return null
   }
 
@@ -329,10 +414,12 @@ const reverseGeocode = async (latitude: number, longitude: number): Promise<stri
     const nmaps = (window as any).naver?.maps
     
     if (!nmaps || !nmaps.Service) {
+      console.warn('⚠️ 네이버 지도 API가 로드되지 않았습니다.')
       return null
     }
     
     if (typeof nmaps.Service.reverseGeocode !== 'function') {
+      console.warn('⚠️ reverseGeocode 함수를 사용할 수 없습니다. geocoder 서브모듈이 로드되지 않았을 수 있습니다.')
       return null
     }
 
@@ -351,19 +438,34 @@ const reverseGeocode = async (latitude: number, longitude: number): Promise<stri
           reverseGeocodeOptions.coordType = nmaps.Service.CoordType.NAVER
         }
 
+        // 타임아웃 설정 (5초)
+        const timeout = setTimeout(() => {
+          console.warn('⚠️ 역지오코딩 타임아웃:', { latitude, longitude })
+          resolve(null)
+        }, 5000)
+
         nmaps.Service.reverseGeocode(
           reverseGeocodeOptions,
           (status: any, response: any) => {
+            clearTimeout(timeout)
+            
             const isOK = status === nmaps.Service.Status.OK || 
                         status === 0 || 
                         (typeof status === 'string' && status.toLowerCase() === 'ok')
             
-            if (isOK && response?.v2) {
+            if (!isOK) {
+              console.warn('⚠️ 역지오코딩 실패:', { status, latitude, longitude })
+              resolve(null)
+              return
+            }
+            
+            if (response?.v2) {
               const v2: any = response.v2
               
               // 1) v2.address 우선 (신규 스펙)
               const direct = v2.address?.roadAddress || v2.address?.jibunAddress
               if (direct) {
+                console.log('✅ 역지오코딩 성공 (v2.address):', direct)
                 resolve(direct)
                 return
               }
@@ -384,6 +486,7 @@ const reverseGeocode = async (latitude: number, longitude: number): Promise<stri
                 if (land.addition0?.type === 'building' && land.addition0?.value) parts.push(land.addition0.value)
                 const joined = parts.filter(Boolean).join(' ')
                 if (joined) {
+                  console.log('✅ 역지오코딩 성공 (v2.results):', joined)
                   resolve(joined)
                   return
                 }
@@ -394,39 +497,66 @@ const reverseGeocode = async (latitude: number, longitude: number): Promise<stri
                 const address = v2.addresses[0]
                 const result = address.roadAddress || address.jibunAddress || address.address
                 if (result) {
+                  console.log('✅ 역지오코딩 성공 (v2.addresses):', result)
                   resolve(result)
                   return
                 }
               }
               
+              console.warn('⚠️ 역지오코딩 응답 파싱 실패:', response)
               resolve(null)
             } else {
+              console.warn('⚠️ 역지오코딩 응답 형식 오류:', response)
               resolve(null)
             }
           }
         )
       } catch (error) {
-        console.error('역지오코딩 오류:', error)
+        console.error('❌ 역지오코딩 오류:', error)
         resolve(null)
       }
     })
   } catch (error) {
-    console.error('역지오코딩 오류:', error)
+    console.error('❌ 역지오코딩 오류:', error)
     return null
   }
 }
 
 // ====== 좌표를 주소로 변환하는 헬퍼 함수 ======
 const convertCoordinatesToAddresses = async () => {
+  console.log('📍 주소 변환 시작...')
+  
+  // 네이버 지도 API가 로드되었는지 확인
+  const nmaps = (window as any).naver?.maps
+  if (!nmaps || !nmaps.Service) {
+    console.warn('⚠️ 네이버 지도 API가 로드되지 않았습니다. 주소 변환을 건너뜁니다.')
+    // 좌표를 그대로 표시
+    startAddress.value = start.value
+    endAddress.value = end.value
+    if (waypoint.value) waypointAddress.value = waypoint.value
+    return
+  }
+  
+  if (typeof nmaps.Service.reverseGeocode !== 'function') {
+    console.warn('⚠️ reverseGeocode 함수를 사용할 수 없습니다. geocoder 서브모듈이 로드되지 않았을 수 있습니다.')
+    startAddress.value = start.value
+    endAddress.value = end.value
+    if (waypoint.value) waypointAddress.value = waypoint.value
+    return
+  }
+
   // 출발지 주소 변환
   if (start.value) {
     const startCoords = parseCoordinates(start.value)
     if (startCoords) {
+      console.log('📍 출발지 좌표 변환 중:', startCoords)
       const address = await reverseGeocode(startCoords.lat, startCoords.lng)
       startAddress.value = address || start.value
+      console.log('📍 출발지 주소:', startAddress.value)
     } else {
       // 좌표 형식이 아니면 그대로 표시 (주소 문자열인 경우)
       startAddress.value = start.value
+      console.log('📍 출발지 (주소 문자열):', startAddress.value)
     }
   }
 
@@ -434,11 +564,14 @@ const convertCoordinatesToAddresses = async () => {
   if (end.value) {
     const endCoords = parseCoordinates(end.value)
     if (endCoords) {
+      console.log('📍 도착지 좌표 변환 중:', endCoords)
       const address = await reverseGeocode(endCoords.lat, endCoords.lng)
       endAddress.value = address || end.value
+      console.log('📍 도착지 주소:', endAddress.value)
     } else {
       // 좌표 형식이 아니면 그대로 표시 (주소 문자열인 경우)
       endAddress.value = end.value
+      console.log('📍 도착지 (주소 문자열):', endAddress.value)
     }
   }
 
@@ -446,13 +579,18 @@ const convertCoordinatesToAddresses = async () => {
   if (waypoint.value) {
     const waypointCoords = parseCoordinates(waypoint.value)
     if (waypointCoords) {
+      console.log('📍 경유지 좌표 변환 중:', waypointCoords)
       const address = await reverseGeocode(waypointCoords.lat, waypointCoords.lng)
       waypointAddress.value = address || waypoint.value
+      console.log('📍 경유지 주소:', waypointAddress.value)
     } else {
       // 좌표 형식이 아니면 그대로 표시 (주소 문자열인 경우)
       waypointAddress.value = waypoint.value
+      console.log('📍 경유지 (주소 문자열):', waypointAddress.value)
     }
   }
+  
+  console.log('✅ 주소 변환 완료')
 }
 
 // ====== 네이버 API 응답에서 경로 좌표 추출 ======
@@ -514,13 +652,23 @@ const clearOverlays = () => {
 
 // ====== 4. 지도에 경로 그리기 ======
 const drawRoute = () => {
-  if (!map.value || !points.value.length) return
+  if (!map.value) {
+    console.error('❌ drawRoute: map.value가 null입니다.')
+    return
+  }
+  
+  if (!points.value.length) {
+    console.error('❌ drawRoute: points.value가 비어있습니다.')
+    return
+  }
 
   const nmaps = (window as any).naver?.maps
   if (!nmaps) {
-    console.error('네이버 지도 API가 로드되지 않았습니다.')
+    console.error('❌ drawRoute: 네이버 지도 API가 로드되지 않았습니다.')
     return
   }
+  
+  console.log('🎨 drawRoute 시작:', { pointsCount: points.value.length, mapExists: !!map.value })
 
   clearOverlays()
 
@@ -726,14 +874,24 @@ onMounted(async () => {
   allSetsCompleted.value = false
 
   // 2) 지도 먼저 초기화
+  console.log('🗺️ 지도 초기화 시작...')
   await initMap()
+  
+  if (!map.value) {
+    console.error('❌ 지도 초기화 실패. 경로를 로드할 수 없습니다.')
+    return
+  }
+  console.log('✅ 지도 초기화 완료')
 
   // 3) 좌표를 주소로 변환 (지도 초기화 후에 해야 함)
   await convertCoordinatesToAddresses()
 
   // 4) 출발/도착 값 있으면 바로 경로 로드
   if (start.value && end.value) {
+    console.log('🛣️ 경로 로드 시작 (출발/도착 있음)')
     await loadRoute()
+  } else {
+    console.warn('⚠️ 출발지 또는 도착지가 없어 경로를 로드하지 않습니다.', { start: start.value, end: end.value })
   }
 })
 </script>
