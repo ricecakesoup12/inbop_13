@@ -1,38 +1,50 @@
 package inbop._group;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
 import java.util.Map;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/stretch")
 @CrossOrigin(origins = {
-        "http://localhost:5173",
-        "http://localhost:5174",
-        "http://localhost:5175",
-        "http://127.0.0.1:5173",
-        "http://127.0.0.1:5174",
-        "http://127.0.0.1:5175"
+        "http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
+        "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175"
 })
 public class StretchController {
 
     private final StretchGenerator stretchGenerator;
+    private final KakaoParkService kakaoParkService;
 
-    public StretchController(StretchGenerator stretchGenerator) {
+    @Autowired
+    public StretchController(StretchGenerator stretchGenerator, KakaoParkService kakaoParkService) {
         this.stretchGenerator = stretchGenerator;
+        this.kakaoParkService = kakaoParkService;
     }
 
-    // userCode 기준 스트레칭/인터벌 추천
     @GetMapping("/user-code/{userCode}")
-    public ResponseEntity<Map<String, Object>> byUserCode(@PathVariable String userCode) {
-        System.out.println("=== AI 운동 추천 API 호출 ===");
-        System.out.println("userCode: " + userCode);
+    public ResponseEntity<Map<String, Object>> getTotalRecommendation(
+            @PathVariable String userCode,
+            @RequestParam(required = false) Double lat,
+            @RequestParam(required = false) Double lon
+    ) {
+        // 1. AI 운동 처방 가져오기
         Map<String, Object> result = stretchGenerator.recommendStretchingByUserCode(userCode);
-        System.out.println("=== AI 운동 추천 API 응답 완료 ===");
-        System.out.println("통증부위: " + result.get("통증부위"));
-        System.out.println("스트레칭영상 개수: " + (result.get("스트레칭영상") != null ? ((java.util.List<?>) result.get("스트레칭영상")).size() : 0));
-        System.out.println("인터벌운동 개수: " + (result.get("인터벌운동") != null ? ((java.util.List<?>) result.get("인터벌운동")).size() : 0));
+
+        // 2. 위치 정보가 있으면 카카오 공원 리스트로 '공원추천' 필드를 덮어쓰기
+        if (lat != null && lon != null) {
+            List<Map<String, Object>> realParks = kakaoParkService.getNearbyParks(lat, lon);
+
+            // [핵심 수정] AI가 준 복잡한 정보 싹 지우고, 리스트만 딱 넣음
+            result.put("공원추천", realParks);
+        } else {
+            // 위치 정보가 없으면 빈 리스트로 처리 (깔끔하게)
+            result.put("공원추천", Collections.emptyList());
+        }
+
         return ResponseEntity.ok(result);
     }
 }
