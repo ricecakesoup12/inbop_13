@@ -14,8 +14,52 @@
         <div class="RouteMapLabel">경유지</div>
         <div class="RouteMapValue">{{ waypointAddress || waypoint }}</div>
       </div>
-      <div v-if="loading" class="RouteMapLoading">
-        경로 불러오는 중...
+    <div v-if="loading" class="RouteMapLoading">
+      경로 불러오는 중...
+    </div>
+    </div>
+
+    <!-- 운동 타이머 컨트롤 -->
+    <div v-if="walkingMinutes || runningMinutes" class="RouteMapTimerSection">
+      <div class="RouteMapTimerTitle">
+        인터벌 운동
+        <span v-if="totalSets > 0" class="RouteMapTimerSetInfo">
+          ({{ currentSet }}/{{ totalSets }}세트)
+        </span>
+        <span v-if="allSetsCompleted" class="RouteMapTimerAllCompleted">
+          🎉 모든 세트 완료!
+        </span>
+      </div>
+      <div class="RouteMapTimerControls">
+        <!-- 뛰기 버튼 (주황색) - 먼저 표시 -->
+        <div class="RouteMapTimerItem">
+          <button
+            @click="startRunning"
+            :disabled="isWalking || isRunning || runningCompleted || allSetsCompleted"
+            :class="['RouteMapTimerButton', 'RouteMapTimerButtonRunning', { 'RouteMapTimerButtonActive': isRunning, 'RouteMapTimerButtonCompleted': runningCompleted }]"
+          >
+            뛰기
+          </button>
+          <div v-if="isRunning || runningCompleted" class="RouteMapTimerDisplay">
+            <span v-if="runningCompleted" class="RouteMapTimerCompleted">완료</span>
+            <span v-else class="RouteMapTimerTime">{{ formatTime(runningTimeLeft) }}</span>
+          </div>
+        </div>
+
+        <!-- 걷기 버튼 (초록색) - 나중에 표시 -->
+        <div class="RouteMapTimerItem">
+          <button
+            @click="startWalking"
+            :disabled="isWalking || isRunning || walkingCompleted || !runningCompleted || allSetsCompleted"
+            :class="['RouteMapTimerButton', 'RouteMapTimerButtonWalking', { 'RouteMapTimerButtonActive': isWalking, 'RouteMapTimerButtonCompleted': walkingCompleted }]"
+          >
+            걷기
+          </button>
+          <div v-if="isWalking || walkingCompleted" class="RouteMapTimerDisplay">
+            <span v-if="walkingCompleted" class="RouteMapTimerCompleted">완료</span>
+            <span v-else class="RouteMapTimerTime">{{ formatTime(walkingTimeLeft) }}</span>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -25,7 +69,7 @@
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted } from 'vue'
+import { ref, onMounted, onUnmounted } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadNaverMap } from '@/utils/loadNaverMap'
 import { http } from '@/services/api/http'
@@ -44,6 +88,21 @@ const polyline = ref<any>(null)
 const markers = ref<any[]>([])
 const points = ref<Array<{ lat: number; lng: number }>>([])
 const loading = ref(false)
+
+// 운동 타이머 관련
+const walkingMinutes = ref<number>(0)
+const runningMinutes = ref<number>(0)
+const totalSets = ref<number>(0)
+const currentSet = ref<number>(1)
+const isWalking = ref(false)
+const isRunning = ref(false)
+const walkingTimeLeft = ref<number>(0) // 초 단위
+const runningTimeLeft = ref<number>(0) // 초 단위
+const walkingCompleted = ref(false)
+const runningCompleted = ref(false)
+const allSetsCompleted = ref(false)
+let walkingTimer: number | null = null
+let runningTimer: number | null = null
 
 const NAVER_ID = import.meta.env.VITE_NAVER_CLIENT_ID as string
 
@@ -110,6 +169,49 @@ const initMap = async () => {
   }
 }
 
+// ====== 지오코딩: 주소를 좌표로 변환 ======
+const geocode = async (address: string): Promise<string | null> => {
+  // 이미 좌표 형식이면 그대로 반환
+  if (parseCoordinates(address)) {
+    return address
+  }
+
+  try {
+    const nmaps = (window as any).naver?.maps
+    if (!nmaps || !nmaps.Service || typeof nmaps.Service.geocode !== 'function') {
+      console.warn('지오코딩 API를 사용할 수 없습니다.')
+      return null
+    }
+
+    return new Promise((resolve) => {
+      nmaps.Service.geocode(
+        {
+          query: address,
+          coordType: nmaps.Service.CoordType.NAVER
+        },
+        (status: any, response: any) => {
+          const isOK = status === nmaps.Service.Status.OK || 
+                      status === 0 || 
+                      (typeof status === 'string' && status.toLowerCase() === 'ok')
+          
+          if (isOK && response?.v2?.addresses && response.v2.addresses.length > 0) {
+            const addr = response.v2.addresses[0]
+            const lng = addr.x
+            const lat = addr.y
+            resolve(`${lng},${lat}`)
+          } else {
+            console.warn('지오코딩 실패:', address)
+            resolve(null)
+          }
+        }
+      )
+    })
+  } catch (error) {
+    console.error('지오코딩 오류:', error)
+    return null
+  }
+}
+
 // ====== 2. 백엔드에서 경로 가져오기 ======
 const loadRoute = async () => {
   if (!start.value || !end.value) {
@@ -125,14 +227,41 @@ const loadRoute = async () => {
   loading.value = true
 
   try {
+    // 주소를 좌표로 변환 (필요한 경우)
+    let startCoord = start.value
+    let endCoord = end.value
+    
+    // 출발지가 좌표 형식이 아니면 지오코딩
+    if (!parseCoordinates(start.value)) {
+      const geocoded = await geocode(start.value)
+      if (geocoded) {
+        startCoord = geocoded
+      }
+    }
+    
+    // 도착지가 좌표 형식이 아니면 지오코딩
+    if (!parseCoordinates(end.value)) {
+      const geocoded = await geocode(end.value)
+      if (geocoded) {
+        endCoord = geocoded
+      }
+    }
+
     const params: Record<string, string> = {
-      start: start.value,
-      goal: end.value,
+      start: startCoord,
+      goal: endCoord,
       option: 'trafast'
     }
 
     if (waypoint.value) {
-      params.waypoint = waypoint.value
+      let waypointCoord = waypoint.value
+      if (!parseCoordinates(waypoint.value)) {
+        const geocoded = await geocode(waypoint.value)
+        if (geocoded) {
+          waypointCoord = geocoded
+        }
+      }
+      params.waypoint = waypointCoord
     }
 
     const response = await http.get('/api/path/driving', { params })
@@ -464,12 +593,137 @@ const drawRoute = () => {
   map.value.fitBounds(bounds, { padding: 50 })
 }
 
+// ====== 운동 타이머 함수 ======
+const formatTime = (seconds: number): string => {
+  const mins = Math.floor(seconds / 60)
+  const secs = seconds % 60
+  return `${String(mins).padStart(2, '0')}:${String(secs).padStart(2, '0')}`
+}
+
+const startRunning = () => {
+  if (runningCompleted.value || isWalking.value || allSetsCompleted.value) return
+  
+  isRunning.value = true
+  runningTimeLeft.value = runningMinutes.value * 60
+  runningCompleted.value = false
+  
+  if (runningTimer) {
+    clearInterval(runningTimer)
+  }
+  
+  runningTimer = window.setInterval(() => {
+    runningTimeLeft.value--
+    
+    if (runningTimeLeft.value <= 0) {
+      clearInterval(runningTimer!)
+      runningTimer = null
+      isRunning.value = false
+      runningCompleted.value = true
+      runningTimeLeft.value = 0
+      checkSetCompletion()
+    }
+  }, 1000)
+}
+
+const startWalking = () => {
+  if (walkingCompleted.value || isRunning.value || !runningCompleted.value || allSetsCompleted.value) return
+  
+  isWalking.value = true
+  walkingTimeLeft.value = walkingMinutes.value * 60
+  walkingCompleted.value = false
+  
+  if (walkingTimer) {
+    clearInterval(walkingTimer)
+  }
+  
+  walkingTimer = window.setInterval(() => {
+    walkingTimeLeft.value--
+    
+    if (walkingTimeLeft.value <= 0) {
+      clearInterval(walkingTimer!)
+      walkingTimer = null
+      isWalking.value = false
+      walkingCompleted.value = true
+      walkingTimeLeft.value = 0
+      checkSetCompletion()
+    }
+  }, 1000)
+}
+
+// 세트 완료 확인 및 다음 세트로 진행
+const checkSetCompletion = () => {
+  // 뛰기와 걷기가 모두 완료되었는지 확인
+  if (runningCompleted.value && walkingCompleted.value) {
+    // 현재 세트가 마지막 세트인지 확인
+    if (currentSet.value >= totalSets.value) {
+      // 모든 세트 완료
+      allSetsCompleted.value = true
+      console.log('🎉 모든 세트 완료!')
+    } else {
+      // 다음 세트로 진행
+      currentSet.value++
+      // 타이머 초기화
+      runningCompleted.value = false
+      walkingCompleted.value = false
+      runningTimeLeft.value = 0
+      walkingTimeLeft.value = 0
+      console.log(`✅ ${currentSet.value - 1}세트 완료! 다음 세트 시작: ${currentSet.value}/${totalSets.value}`)
+    }
+  }
+}
+
+// 컴포넌트 언마운트 시 타이머 정리
+onUnmounted(() => {
+  if (walkingTimer) {
+    clearInterval(walkingTimer)
+  }
+  if (runningTimer) {
+    clearInterval(runningTimer)
+  }
+})
+
 // 컴포넌트 마운트 시 쿼리 파라미터 읽고 자동으로 경로 로드
 onMounted(async () => {
   // 1) 쿼리에서 값 꺼내기
   start.value = (route.query.start as string) || ''
   end.value = (route.query.end as string) || ''
   waypoint.value = (route.query.waypoint as string) || ''
+  
+  // 처방 정보 가져오기 (쿼리 파라미터 또는 localStorage에서)
+  const walkingMins = route.query.walkingMinutes
+  const runningMins = route.query.runningMinutes
+  const sets = route.query.sets
+  
+  if (walkingMins) {
+    walkingMinutes.value = parseInt(String(walkingMins), 10) || 0
+  }
+  if (runningMins) {
+    runningMinutes.value = parseInt(String(runningMins), 10) || 0
+  }
+  if (sets) {
+    totalSets.value = parseInt(String(sets), 10) || 0
+  }
+  
+  // localStorage에서도 확인 (UserDashboard에서 저장한 경우)
+  const userId = localStorage.getItem('userId')
+  if (userId && (!walkingMins || !runningMins || !sets)) {
+    try {
+      const { getPrescriptionsByUser } = await import('@/services/api/exercisePrescriptions')
+      const prescriptions = await getPrescriptionsByUser(userId)
+      const activePrescription = prescriptions.find(p => p.status === 'ACCEPTED')
+      if (activePrescription) {
+        walkingMinutes.value = activePrescription.walkingMinutes || 0
+        runningMinutes.value = activePrescription.runningMinutes || 0
+        totalSets.value = activePrescription.sets || 0
+      }
+    } catch (error) {
+      console.warn('처방 정보를 가져올 수 없습니다:', error)
+    }
+  }
+  
+  // 초기화
+  currentSet.value = 1
+  allSetsCompleted.value = false
 
   // 2) 지도 먼저 초기화
   await initMap()
@@ -532,6 +786,137 @@ onMounted(async () => {
   background-color: #f0fdf4;
   border-radius: 8px;
   margin-left: auto;
+}
+
+.RouteMapTimerSection {
+  padding: 16px;
+  background-color: #ffffff;
+  border-bottom: 1px solid #e5e7eb;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.RouteMapTimerTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 12px;
+  text-align: center;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  align-items: center;
+}
+
+.RouteMapTimerSetInfo {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-sub);
+}
+
+.RouteMapTimerAllCompleted {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--color-primary);
+  margin-top: 4px;
+}
+
+.RouteMapTimerControls {
+  display: flex;
+  gap: 16px;
+  justify-content: center;
+  align-items: center;
+}
+
+.RouteMapTimerItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.RouteMapTimerButton {
+  padding: 12px 24px;
+  border: 2px solid;
+  border-radius: 0.75rem;
+  font-size: 1rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.RouteMapTimerButton:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.RouteMapTimerButtonWalking {
+  background-color: #22C55E;
+  color: #FFFFFF;
+  border-color: #22C55E;
+}
+
+.RouteMapTimerButtonWalking:hover:not(:disabled) {
+  background-color: #16A34A;
+  border-color: #16A34A;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(34, 197, 94, 0.3);
+}
+
+.RouteMapTimerButtonWalking.RouteMapTimerButtonActive {
+  background-color: #16A34A;
+  border-color: #16A34A;
+  box-shadow: 0 0 0 3px rgba(34, 197, 94, 0.2);
+}
+
+.RouteMapTimerButtonWalking.RouteMapTimerButtonCompleted {
+  background-color: #D1D5DB;
+  border-color: #D1D5DB;
+  color: #6B7280;
+}
+
+.RouteMapTimerButtonRunning {
+  background-color: #FF9800;
+  color: #FFFFFF;
+  border-color: #FF9800;
+}
+
+.RouteMapTimerButtonRunning:hover:not(:disabled) {
+  background-color: #F57C00;
+  border-color: #F57C00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.RouteMapTimerButtonRunning.RouteMapTimerButtonActive {
+  background-color: #F57C00;
+  border-color: #F57C00;
+  box-shadow: 0 0 0 3px rgba(255, 152, 0, 0.2);
+}
+
+.RouteMapTimerButtonRunning.RouteMapTimerButtonCompleted {
+  background-color: #D1D5DB;
+  border-color: #D1D5DB;
+  color: #6B7280;
+}
+
+.RouteMapTimerDisplay {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-family: 'Gowun Dodum', sans-serif;
+  min-height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.RouteMapTimerTime {
+  color: var(--text-main);
+}
+
+.RouteMapTimerCompleted {
+  color: var(--color-primary);
 }
 
 .RouteMapFull {

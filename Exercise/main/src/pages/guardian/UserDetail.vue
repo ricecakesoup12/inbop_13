@@ -841,9 +841,43 @@ const loadStretchRecommendation = async () => {
         console.log(`  ${idx + 1}. ${video.제목}: ${video.영상주소}`)
       })
     }
-  } catch (error) {
+  } catch (error: any) {
     console.error('❌ AI 운동 추천 실패:', error)
-    alert('AI 운동 추천에 실패했습니다. 콘솔을 확인해주세요.')
+    console.error('❌ 에러 상세 정보:', {
+      message: error?.message,
+      response: error?.response,
+      status: error?.response?.status,
+      statusText: error?.response?.statusText,
+      data: error?.response?.data,
+      url: error?.config?.url,
+      method: error?.config?.method
+    })
+    
+    let errorMessage = 'AI 운동 추천을 불러오는 중 오류가 발생했습니다.'
+    
+    if (error?.response) {
+      // 백엔드에서 응답이 온 경우
+      const status = error.response.status
+      const data = error.response.data
+      
+      if (status === 404) {
+        errorMessage = '사용자를 찾을 수 없습니다. 사용자 코드를 확인해주세요.'
+      } else if (status === 500) {
+        errorMessage = `서버 오류가 발생했습니다.\n${data?.message || '잠시 후 다시 시도해주세요.'}`
+      } else if (status === 400) {
+        errorMessage = `잘못된 요청입니다.\n${data?.message || '요청 파라미터를 확인해주세요.'}`
+      } else {
+        errorMessage = `오류가 발생했습니다. (상태 코드: ${status})\n${data?.message || ''}`
+      }
+    } else if (error?.code === 'ECONNABORTED' || error?.message?.includes('timeout')) {
+      errorMessage = '요청 시간이 초과되었습니다. 네트워크 연결을 확인해주세요.'
+    } else if (error?.message?.includes('Network Error') || error?.code === 'ERR_NETWORK') {
+      errorMessage = '네트워크 오류가 발생했습니다.\n백엔드 서버가 실행 중인지 확인해주세요.\n(기본 주소: http://localhost:8081)'
+    } else if (error?.message) {
+      errorMessage = `오류: ${error.message}`
+    }
+    
+    alert(errorMessage)
   } finally {
     stretchLoading.value = false
   }

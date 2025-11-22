@@ -298,6 +298,31 @@
       </template>
     </AppModal>
 
+    <!-- 공원 선택 팝업 -->
+    <AppModal :open="showParkSelectionPopup" title="공원 선택" @close="showParkSelectionPopup = false">
+      <div class="ParkSelectionContent">
+        <p class="ParkSelectionMessage">인터벌 운동을 위한 공원을 선택해주세요.</p>
+        <div v-if="loadingParks" class="ParkSelectionLoading">
+          공원 정보를 불러오는 중...
+        </div>
+        <div v-else-if="recommendedParks.length === 0" class="ParkSelectionEmpty">
+          근처 공원을 찾을 수 없습니다.
+        </div>
+        <div v-else class="ParkSelectionList">
+          <button
+            v-for="(park, index) in recommendedParks"
+            :key="index"
+            @click="selectPark(park)"
+            class="ParkSelectionItem"
+          >
+            <div class="ParkSelectionItemTitle">{{ park.title }}</div>
+            <div class="ParkSelectionItemAddress">{{ park.address }}</div>
+            <div class="ParkSelectionItemDistance">{{ park.distance }}</div>
+          </button>
+        </div>
+      </div>
+    </AppModal>
+
     <!-- 상점 팝업 -->
     <AppModal :open="showShopPopup" title="상점" @close="closeShopPopup">
       <div class="ShopPopupContent">
@@ -351,6 +376,7 @@ import { getPendingPrescription, acceptPrescription, declinePrescription, getPre
 import type { SurveyRequest } from '@/services/api/surveyRequests'
 import { getSproutCount, earnSprout, spendSprouts } from '@/services/api/sprouts'
 import { upsertLocation } from '@/services/api/locations'
+import { getStretchRecommendation, type ParkRecommendation } from '@/services/api/stretch'
 import http from '@/services/api/http'
 
 const router = useRouter()
@@ -576,6 +602,9 @@ const chatMessages = ref<ChatMessage[]>([])
 
 // 처방 관련
 const showPrescriptionPopup = ref(false)
+const showParkSelectionPopup = ref(false)
+const recommendedParks = ref<ParkRecommendation[]>([])
+const loadingParks = ref(false)
 const pendingPrescription = ref<ExercisePrescription | null>(null)
 const activePrescription = ref<ExercisePrescription | null>(null)
 const hasActivePrescription = computed(() => activePrescription.value !== null)
@@ -1228,24 +1257,128 @@ const completeInterval = async (setIndex: number) => {
   await handleAllExercisesCompleted()
 }
 
-// 다음 미완료 인터벌 세트 완료 처리
-const completeNextInterval = async () => {
-  if (!activePrescription.value) return
+// 위치 가져오기 (명시적으로 권한 요청)
+const getCurrentLocation = (): Promise<{ lat: number; lng: number }> => {
+  return new Promise((resolve, reject) => {
+    if (!navigator.geolocation) {
+      reject(new Error('이 브라우저는 위치 서비스를 지원하지 않습니다.'))
+      return
+    }
+
+    navigator.geolocation.getCurrentPosition(
+      (pos) => {
+        const { latitude, longitude } = pos.coords
+        resolve({ lat: latitude, lng: longitude })
+      },
+      (err) => {
+        let errorMessage = '위치를 가져올 수 없습니다.'
+        
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            errorMessage = '위치 권한이 거부되었습니다.\n브라우저 설정에서 위치 권한을 허용해주세요.'
+            break
+          case err.POSITION_UNAVAILABLE:
+            errorMessage = '위치 정보를 사용할 수 없습니다.\nGPS 또는 네트워크 위치 서비스를 확인해주세요.'
+            break
+          case err.TIMEOUT:
+            errorMessage = '위치 요청 시간이 초과되었습니다.\n잠시 후 다시 시도해주세요.'
+            break
+          default:
+            errorMessage = `위치 오류: ${err.message}`
+        }
+        
+        reject(new Error(errorMessage))
+      },
+      {
+        enableHighAccuracy: false, // 노트북에서는 false가 더 빠름
+        timeout: 10000,
+        maximumAge: 60000, // 1분 이내 캐시된 위치 사용 가능
+      }
+    )
+  })
+}
+
+// 공원 추천 가져오기
+const loadRecommendedParks = async () => {
+  if (!currentUser.value?.userCode) return
   
-  // 인터벌 배열이 초기화되지 않았으면 초기화
-  if (exerciseCompleted.value.intervals.length !== activePrescription.value.sets) {
-    exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(false)
+  loadingParks.value = true
+  try {
+    // 먼저 기존 위치 확인
+    let lat = position.value?.lat
+    let lon = position.value?.lng
+    
+    // 위치가 없으면 명시적으로 요청
+    if (!lat || !lon) {
+      try {
+        const location = await getCurrentLocation()
+        lat = location.lat
+        lon = location.lng
+        // 위치를 position에도 저장
+        position.value = { lat, lng: lon }
+      } catch (error: any) {
+        alert(error.message || '현재 위치를 가져올 수 없습니다.')
+        loadingParks.value = false
+        return
+      }
+    }
+    
+    if (!lat || !lon) {
+      alert('현재 위치를 가져올 수 없습니다. 위치 권한을 확인해주세요.')
+      loadingParks.value = false
+      return
+    }
+    
+    const recommendation = await getStretchRecommendation(currentUser.value.userCode, lat, lon)
+    
+    // 공원추천이 배열인지 확인
+    if (Array.isArray(recommendation.공원추천)) {
+      recommendedParks.value = recommendation.공원추천.filter((park: any) => 
+        park && park.title && park.address
+      )
+    } else {
+      recommendedParks.value = []
+    }
+    
+    if (recommendedParks.value.length === 0) {
+      alert('근처 공원을 찾을 수 없습니다.')
+    }
+  } catch (error) {
+    console.error('공원 추천 로드 실패:', error)
+    alert('공원 추천을 불러오는 중 오류가 발생했습니다.')
+  } finally {
+    loadingParks.value = false
+  }
+}
+
+// 공원 선택 시 경로 표시
+const selectPark = (park: ParkRecommendation) => {
+  if (!position.value?.lat || !position.value?.lng) {
+    alert('현재 위치를 가져올 수 없습니다.')
+    return
   }
   
-  // 모든 인터벌 세트를 한 번에 완료 처리
-  exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(true)
-  console.log(`✅ 모든 인터벌 세트 완료 (${activePrescription.value.sets}/${activePrescription.value.sets})`)
+  // 현재 위치를 출발지로, 공원 주소를 도착지로 설정
+  const start = `${position.value.lng},${position.value.lat}`
   
-  // RouteMap 페이지를 새 창으로 열기 (출발지/도착지 쿼리 파라미터 포함)
-  // 기본값: 수원대 정문 -> AK플라자 수원점 (사용자가 나중에 다른 페이지에서 입력할 수 있도록)
-  const start = '126.844856,37.5407361' // 수원대 정문 (기본값)
-  const end = '126.8980711,37.5763214' // AK플라자 수원점 (기본값)
-  const routeUrl = `/user/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}`
+  // 공원 주소를 좌표로 변환해야 하는데, 일단 주소 문자열로 전달
+  // (RouteMap에서 주소를 좌표로 변환하거나, 백엔드에서 처리)
+  const end = park.address
+  
+  // 모든 인터벌 세트를 한 번에 완료 처리
+  if (exerciseCompleted.value.intervals.length !== activePrescription.value?.sets) {
+    exerciseCompleted.value.intervals = new Array(activePrescription.value?.sets || 0).fill(false)
+  }
+  exerciseCompleted.value.intervals = new Array(activePrescription.value?.sets || 0).fill(true)
+  console.log(`✅ 모든 인터벌 세트 완료`)
+  
+  // 처방 정보를 쿼리 파라미터로 전달
+  const walkingMins = activePrescription.value?.walkingMinutes || 0
+  const runningMins = activePrescription.value?.runningMinutes || 0
+  const sets = activePrescription.value?.sets || 0
+  
+  // RouteMap 페이지를 새 창으로 열기
+  const routeUrl = `/user/route?start=${encodeURIComponent(start)}&end=${encodeURIComponent(end)}&walkingMinutes=${walkingMins}&runningMinutes=${runningMins}&sets=${sets}`
   const newWindow = window.open(routeUrl, '_blank', 'width=1200,height=800')
   if (!newWindow) {
     console.warn('⚠️ 팝업이 차단되었을 수 있습니다')
@@ -1254,7 +1387,28 @@ const completeNextInterval = async () => {
     console.log('✅ RouteMap 새 창 열림')
   }
   
-  await handleAllExercisesCompleted()
+  showParkSelectionPopup.value = false
+  handleAllExercisesCompleted()
+}
+
+// 다음 미완료 인터벌 세트 완료 처리
+const completeNextInterval = async () => {
+  if (!activePrescription.value) return
+  
+  // 공원 추천 가져오기
+  await loadRecommendedParks()
+  
+  // 공원이 있으면 선택 모달 표시, 없으면 바로 완료 처리
+  if (recommendedParks.value.length > 0) {
+    showParkSelectionPopup.value = true
+  } else {
+    // 공원이 없으면 바로 완료 처리
+    if (exerciseCompleted.value.intervals.length !== activePrescription.value.sets) {
+      exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(false)
+    }
+    exerciseCompleted.value.intervals = new Array(activePrescription.value.sets).fill(true)
+    await handleAllExercisesCompleted()
+  }
 }
 
 // 마무리 스트레칭 완료

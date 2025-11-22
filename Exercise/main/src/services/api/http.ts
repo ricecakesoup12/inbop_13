@@ -2,7 +2,7 @@ import axios from 'axios'
 
 export const http = axios.create({
   baseURL: import.meta.env.VITE_API_BASE || 'http://localhost:8081',
-  timeout: 10000,
+  timeout: 60000, // 60초로 증가 (AI API 호출이 오래 걸릴 수 있음)
 })
 
 // 요청 인터셉터

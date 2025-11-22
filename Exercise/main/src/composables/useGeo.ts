@@ -33,13 +33,30 @@ export function useGeo() {
         loading.value = false
       },
       (err) => {
-        error.value = err.message
+        let errorMessage = '위치를 가져올 수 없습니다.'
+        
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            errorMessage = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.'
+            break
+          case err.POSITION_UNAVAILABLE:
+            errorMessage = '위치 정보를 사용할 수 없습니다. GPS 또는 네트워크 위치 서비스를 확인해주세요.'
+            break
+          case err.TIMEOUT:
+            errorMessage = '위치 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.'
+            break
+          default:
+            errorMessage = err.message || '알 수 없는 위치 오류가 발생했습니다.'
+        }
+        
+        error.value = errorMessage
+        console.error('❌ 위치 가져오기 실패:', errorMessage, err)
         loading.value = false
       },
       {
-        enableHighAccuracy: true,
-        timeout: 5000,
-        maximumAge: 0,
+        enableHighAccuracy: false, // 노트북에서는 false가 더 빠름
+        timeout: 10000, // 10초로 증가
+        maximumAge: 60000, // 1분 이내 캐시된 위치 사용 가능
       }
     )
   }
@@ -85,12 +102,29 @@ export function useGeo() {
         callback(newPos)
       },
       (err) => {
-        error.value = err.message
+        let errorMessage = '위치를 가져올 수 없습니다.'
+        
+        switch (err.code) {
+          case err.PERMISSION_DENIED:
+            errorMessage = '위치 권한이 거부되었습니다. 브라우저 설정에서 위치 권한을 허용해주세요.'
+            break
+          case err.POSITION_UNAVAILABLE:
+            errorMessage = '위치 정보를 사용할 수 없습니다. GPS 또는 네트워크 위치 서비스를 확인해주세요.'
+            break
+          case err.TIMEOUT:
+            errorMessage = '위치 요청 시간이 초과되었습니다. 잠시 후 다시 시도해주세요.'
+            break
+          default:
+            errorMessage = err.message || '알 수 없는 위치 오류가 발생했습니다.'
+        }
+        
+        error.value = errorMessage
+        console.error('❌ 위치 추적 실패:', errorMessage, err)
       },
       {
-        enableHighAccuracy: true,
+        enableHighAccuracy: false, // 노트북에서는 false가 더 빠름
         timeout: 15000,
-        maximumAge: 5000,
+        maximumAge: 60000, // 1분 이내 캐시된 위치 사용 가능
       }
     )
 
