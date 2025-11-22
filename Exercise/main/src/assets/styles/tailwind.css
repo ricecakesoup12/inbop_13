@@ -4,3 +4,5 @@
 @tailwind components;
 @tailwind utilities;
 
+/* components.css는 main.ts에서 직접 import하므로 여기서는 제거 */
+

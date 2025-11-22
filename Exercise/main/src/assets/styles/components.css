@@ -1,0 +1,3148 @@
+/* 컴포넌트별 커스텀 스타일 - PascalCase 클래스명 */
+
+/* Tailwind 기본 스타일 오버라이드 - 커스텀 클래스 우선순위 높이기 */
+h1[class*="Title"],
+h2[class*="Title"],
+h3[class*="Title"],
+h4[class*="Title"],
+h5[class*="Title"],
+h6[class*="Title"] {
+  margin: 0 !important;
+  margin-block-start: 0 !important;
+  margin-block-end: 0 !important;
+  margin-inline-start: 0 !important;
+  margin-inline-end: 0 !important;
+  font-size: inherit !important;
+  font-weight: inherit !important;
+  line-height: inherit !important;
+  display: block !important;
+  unicode-bidi: inherit !important;
+}
+
+/* 모든 SVG 아이콘 기본 크기 제한 - 2배 크기 */
+svg[class*="Icon"] {
+  max-width: 1.75rem !important;
+  max-height: 1.75rem !important;
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  flex-shrink: 0 !important;
+}
+
+/* App Root */
+.AppRoot {
+  min-height: 100vh;
+}
+
+/* UserDashboard */
+.UserDashboardPage {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, var(--bg-beige), #FFFFFF);
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.UserDashboardHeaderCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  height: 50vh;
+  border: 1px solid #E0E0E0;
+  position: relative;
+  box-shadow: var(--shadow-soft);
+  padding: 1.5rem;
+}
+
+.UserDashboardHeaderContent {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 1.5rem;
+  height: 100%;
+  align-items: center;
+}
+
+.UserAvatarSection {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.5rem;
+  position: relative;
+  flex-shrink: 0;
+  grid-column: 1;
+}
+
+/* UserQuickActions를 가운데 컬럼에 배치 */
+.UserQuickActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  grid-column: 2;
+  grid-row: 1;
+}
+
+.SproutCountButton {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem;
+  background-color: rgba(139, 195, 74, 0.1);
+  border-radius: 0.5rem;
+  border: 1px solid rgba(139, 195, 74, 0.2);
+}
+
+.SproutCountButton:disabled {
+  opacity: 0.5;
+}
+
+.SproutCountText {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.OpenShopButton,
+.EmergencyCallButton,
+.ContactGuardianButton {
+  padding: 0.5rem;
+  background-color: #F5F5F5;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  border: none;
+  cursor: pointer;
+}
+
+.OpenShopButton:hover,
+.EmergencyCallButton:hover,
+.ContactGuardianButton:hover {
+  background-color: #E0E0E0;
+}
+
+.OpenShopButton svg.OpenShopButtonIcon,
+.EmergencyCallButton svg.EmergencyCallButtonIcon,
+.ContactGuardianButton svg.ContactGuardianButtonIcon,
+.OpenShopButtonIcon,
+.EmergencyCallButtonIcon,
+.ContactGuardianButtonIcon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
+  max-height: 1.75rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.UserAvatarImageWrapper {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  overflow: hidden;
+  border: 4px solid var(--color-primary);
+}
+
+.UserAvatarPlaceholder {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 50%;
+  background-color: #E0E0E0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2.25rem;
+  border: 4px solid var(--color-primary);
+}
+
+.UserAvatarStatus {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.UserActivityGoal {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+.UserDailyGoalSection {
+  flex: 0 0 33.333%;
+  min-width: 0;
+  grid-column: 3;
+  display: flex;
+  justify-content: flex-end;
+  margin-right: 3rem;
+}
+
+.UserDailyGoalContent {
+  height: 100%;
+}
+
+.UserDailyGoalContentInner {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-end;
+  text-align: right;
+}
+
+.DailyExerciseTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+  text-align: center;
+  width: 100%;
+}
+
+.DailyExerciseCompleted {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  color: var(--color-primary);
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.DailyExerciseActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: 100%;
+  margin-right: 1rem;
+}
+
+.StartStretchingButton,
+.IntervalWorkoutButton,
+.EndStretchingButton {
+  padding: 0.5rem 1rem;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  font-weight: 600;
+  border: none;
+  cursor: pointer;
+  width: 100%;
+  max-width: 100%;
+  white-space: normal;
+  word-wrap: break-word;
+}
+
+.StartStretchingButton:hover,
+.IntervalWorkoutButton:hover,
+.EndStretchingButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.UserDashboardMainGrid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .UserDashboardMainGrid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+.RealtimeVitalsCard {
+  height: 100%;
+}
+
+.RealtimeVitalsContent {
+  padding: 1rem;
+}
+
+.RealtimeVitalsTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.RealtimeVitalsTitle svg.RealtimeVitalsIcon,
+.RealtimeVitalsIcon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
+  max-height: 1.75rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.RealtimeVitalsMetrics {
+  margin-bottom: 1rem;
+}
+
+.RealtimeHeartRateRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.RealtimeHeartRateLabel {
+  color: var(--text-sub);
+}
+
+.RealtimeHeartRateValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.RealtimeHeartRateValueActive {
+  color: var(--color-primary);
+}
+
+.RealtimeHeartRateValueInactive {
+  color: var(--text-light);
+}
+
+.RealtimeHeartRateUnit {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+.SensorWaitingMessage {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-style: italic;
+  margin-bottom: 1rem;
+}
+
+.RealtimeVitalsActions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.ReconnectBluetoothButton,
+.ViewSurveyResultButton {
+  width: 100%;
+}
+
+.PendingSurveyRequestItem {
+  position: relative;
+}
+
+.NewSurveyRequestButton {
+  width: 100%;
+  background-color: #FF9800 !important;
+  color: #FFFFFF !important;
+  transition: background-color 0.2s;
+  border: none !important;
+}
+
+.NewSurveyRequestButton:hover {
+  background-color: #F57C00 !important;
+}
+
+.NewSurveyRequestButton.AppButtonSolid {
+  background-color: #FF9800 !important;
+}
+
+.NewSurveyRequestButton.AppButtonSolid:hover {
+  background-color: #F57C00 !important;
+}
+
+.NewSurveyRequestButtonIcon,
+.NewSurveyRequestButton svg.NewSurveyRequestButtonIcon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
+  max-height: 1.75rem !important;
+  flex-shrink: 0 !important;
+}
+
+.ExerciseCard {
+  height: 100%;
+}
+
+.ExerciseSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.WorkoutToggleButton {
+  width: 100%;
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.ExerciseContent {
+  padding: 1rem;
+}
+
+.ExerciseStatsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+
+.ExerciseCaloriesCard,
+.ExerciseTimeCard {
+  background-color: #F9FAFB;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.ExerciseCaloriesLabel,
+.ExerciseTimeLabel {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin-bottom: 0.25rem;
+}
+
+.ExerciseCaloriesValue,
+.ExerciseTimeValue {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.ExerciseCaloriesUnit {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+}
+
+.ExerciseLocationSection {
+  margin-top: 1rem;
+}
+
+.CurrentLocationMap {
+  margin-bottom: 0.5rem;
+  width: 100%;
+  border-radius: 0.5rem;
+  overflow: hidden;
+  height: 300px;
+}
+
+.CurrentAddressDisplay {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  margin-bottom: 0.5rem;
+}
+
+.ViewLiveLocationButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ViewLiveLocationButtonIcon,
+.ViewLiveLocationButton svg.ViewLiveLocationButtonIcon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
+  max-height: 1.75rem !important;
+  flex-shrink: 0 !important;
+}
+
+.UserChatCard {
+  height: 100%;
+}
+
+.UserChatContent {
+  padding: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ChatSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.ChatMessageList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ChatMessageRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.ChatMessageSender {
+  font-size: 0.75rem;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.ChatMessageSenderUser {
+  color: #FF9800;
+}
+
+.ChatMessageSenderBot {
+  color: var(--color-primary);
+}
+
+.ChatMessageText {
+  font-size: 0.875rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 0.5rem;
+  flex: 1;
+}
+
+.ChatMessageRow:has(.ChatMessageSenderUser) .ChatMessageText {
+  background-color: #FFF3E0;
+  color: #E65100;
+}
+
+.ChatMessageRow:has(.ChatMessageSenderBot) .ChatMessageText {
+  background-color: #F1F8E9;
+  color: #33691E;
+}
+
+.ChatInputRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ChatInputField {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.ChatInputField:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.ChatSendButton {
+  padding: 0.5rem 1rem;
+}
+
+.PendingSurveyRequests {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.PendingSurveyRequestBadge {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #EF4444;
+  border-radius: 50%;
+}
+
+/* UserSurvey */
+.UserSurveyPage {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, var(--bg-beige), #FFFFFF);
+  padding: 1.5rem;
+}
+
+.UserSurveyContainer {
+  max-width: 56rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.UserSurveyCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.UserSurveyHeader {
+  margin-bottom: 1.5rem;
+}
+
+.UserSurveyTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.GuardianRequestBanner {
+  background-color: #FFFBEB;
+  border: 1px solid #FDE68A;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+}
+
+.GuardianRequestContent {
+  display: flex;
+  gap: 0.75rem;
+}
+
+.GuardianRequestIcon,
+.GuardianRequestContent svg.GuardianRequestIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  color: #D97706 !important;
+  flex-shrink: 0 !important;
+  margin-top: 0.25rem;
+}
+
+.GuardianRequestText {
+  flex: 1;
+}
+
+.GuardianRequestLabel {
+  font-weight: 600;
+  color: #92400E;
+  margin-bottom: 0.25rem;
+}
+
+.GuardianRequestMessage {
+  font-size: 0.875rem;
+  color: #B45309;
+}
+
+.UserSurveyForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.SurveySection {
+  margin-bottom: 1.5rem;
+  padding-bottom: 1.5rem;
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.SurveySectionTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.SurveyField {
+  margin-bottom: 1rem;
+}
+
+.SurveyFieldLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.SurveyRequired {
+  color: #EF4444;
+}
+
+.SurveyOptionGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .SurveyOptionGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.SurveyOption {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.SurveyOptionSelected {
+  border-color: var(--color-primary);
+  background-color: rgba(139, 195, 74, 0.1);
+}
+
+.SurveyOptionUnselected {
+  border-color: #D1D5DB;
+}
+
+.SurveyOptionUnselected:hover {
+  border-color: rgba(139, 195, 74, 0.5);
+}
+
+.SurveyOptionInput {
+  cursor: pointer;
+}
+
+.SurveyInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #E0E0E0;
+  border-radius: 0.75rem;
+  outline: none;
+  font-family: 'Gowun Dodum', sans-serif;
+  transition: border-color 0.2s;
+}
+
+.SurveyInput:focus {
+  border-color: var(--color-primary);
+}
+
+.SurveyOtherInput {
+  margin-top: 0.5rem;
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #E0E0E0;
+  border-radius: 0.75rem;
+  outline: none;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.SurveyOtherInput:focus {
+  border-color: var(--color-primary);
+}
+
+.SurveyFieldGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .SurveyFieldGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+.SurveyOptionList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.SurveyFitnessLevel {
+  margin-bottom: 1rem;
+}
+
+.SurveyFitnessLevelOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.SurveyFitnessLevelOption {
+  padding: 0.75rem;
+  border: 1px solid;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+}
+
+.SurveyFitnessLevelOptionSelected {
+  border-color: var(--color-primary);
+  background-color: rgba(139, 195, 74, 0.1);
+}
+
+.SurveyFitnessLevelOptionUnselected {
+  border-color: #D1D5DB;
+}
+
+.SurveyFitnessLevelOptionUnselected:hover {
+  border-color: rgba(139, 195, 74, 0.5);
+}
+
+.UserSurveyActions {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 2rem;
+}
+
+.SurveyCancelButton,
+.SurveySubmitButton {
+  flex: 1;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-family: 'Gowun Dodum', sans-serif;
+  transition: all 0.2s;
+}
+
+.SurveySubmitButton {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+}
+
+.SurveySubmitButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.SurveyCancelButton {
+  background-color: #F5F5F5;
+  color: var(--text-main);
+  border: none;
+  cursor: pointer;
+}
+
+.SurveyCancelButton:hover {
+  background-color: #E0E0E0;
+}
+
+/* SurveySend */
+.SurveySendPage {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.SurveySendTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.SurveySendCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.SurveySendDescription {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  margin-bottom: 1rem;
+}
+
+.SurveySendForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.SurveyMessageLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.SurveyMessageInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+  font-family: 'Gowun Dodum', sans-serif;
+  resize: vertical;
+}
+
+.SurveyMessageInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.SurveySendActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.SurveySendCancelButton,
+.SurveySendSubmitButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.SurveySendSubmitButton {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.SurveySendSubmitButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* SurveyResult & UserSurveyResult */
+.SurveyResultPage,
+.UserSurveyResultPage {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.SurveyResultTitle,
+.UserSurveyResultTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.SurveyResultLoading,
+.SurveyResultError,
+.SurveyResultEmpty,
+.LoadingMessage,
+.NoSurveyMessage {
+  text-align: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  color: var(--text-sub);
+}
+
+.SurveyResultRetryButton,
+.SurveyResultBackButton {
+  margin-top: 1rem;
+}
+
+.SurveyResultContent,
+.UserSurveyResultContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.UserSurveyResultCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.UserSurveyResultHeader {
+  margin-bottom: 1.5rem;
+}
+
+.DateSelectionCard {
+  background-color: #F9FAFB;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.DateSelectionLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.DateSelectionSelect {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.DateSelectionSelect:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.SurveyDetailsContainer {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.SectionHeader {
+  margin-bottom: 1rem;
+}
+
+.SectionTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.SectionContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.DataRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid #F3F4F6;
+}
+
+.DataLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  flex-shrink: 0;
+  width: 8rem;
+}
+
+.DataValueWrapper {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.DataValue {
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.DataDiff {
+  font-size: 0.75rem;
+  color: var(--color-primary);
+  font-weight: 600;
+}
+
+.BackButtonWrapper,
+.BackToDashboardButtonWrapper {
+  margin-top: 1.5rem;
+  text-align: center;
+}
+
+.BackButton,
+.BackToDashboardButton {
+  padding: 0.5rem 1.5rem;
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-radius: 0.5rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.BackButton:hover,
+.BackToDashboardButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Layouts */
+.DefaultLayoutPage,
+.AppShellPage {
+  min-height: 100vh;
+  background-color: var(--bg-beige);
+}
+
+.DefaultLayoutContainer,
+.AppShellMainContainer {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  padding: 1rem;
+}
+
+.DefaultLayoutHeader,
+.AppShellHeader {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.AppShellHeaderContainer {
+  max-width: 80rem;
+  margin-left: auto;
+  margin-right: auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.DefaultLayoutTitle,
+.AppShellTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.BackToMainLink {
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+
+.BackToMainLink:hover {
+  text-decoration: underline;
+}
+
+.DefaultLayoutMain,
+.AppShellMain {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Landing */
+.LandingPage {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, var(--bg-beige), #FFFFFF);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.LandingContainer {
+  max-width: 28rem;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.LandingTitleSection {
+  text-align: center;
+}
+
+.LandingTitle {
+  font-size: 2.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.LandingSubtitle {
+  color: var(--text-sub);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.LandingRoleSelection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.LandingRoleLink {
+  display: block;
+}
+
+.GuardianRoleCard,
+.UserRoleCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 2px solid transparent;
+  transition: all 0.2s;
+  cursor: pointer;
+  transform: translateZ(0);
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.GuardianRoleCard:hover,
+.UserRoleCard:hover {
+  border-color: var(--color-primary);
+  transform: translateY(-0.25rem);
+}
+
+.GuardianRoleHeader,
+.UserRoleHeader {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.GuardianRoleIconWrapper,
+.UserRoleIconWrapper {
+  width: 4rem;
+  height: 4rem;
+  background-color: rgba(139, 195, 74, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.GuardianRoleIcon,
+.UserRoleIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-primary);
+}
+
+.GuardianRoleContent,
+.UserRoleContent {
+  flex: 1;
+}
+
+.GuardianRoleTitle,
+.UserRoleTitle {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.GuardianRoleSubtitle,
+.UserRoleSubtitle {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.GuardianRoleDescription,
+.UserRoleDescription {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.LandingPrompt {
+  text-align: center;
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+/* UserRegister */
+.UserRegisterPage {
+  min-height: 100vh;
+  background: linear-gradient(to bottom right, var(--bg-beige), #FFFFFF);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.5rem;
+}
+
+.UserRegisterContainer {
+  max-width: 28rem;
+  width: 100%;
+}
+
+.UserRegisterCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 2rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.UserRegisterHeader {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.UserRegisterIconWrapper {
+  width: 4rem;
+  height: 4rem;
+  background-color: rgba(139, 195, 74, 0.1);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-left: auto;
+  margin-right: auto;
+  margin-bottom: 1rem;
+}
+
+.UserRegisterIcon {
+  width: 1.75rem;
+  height: 1.75rem;
+  color: var(--color-primary);
+}
+
+.UserRegisterTitle,
+h1.UserRegisterTitle {
+  font-size: 1.875rem !important;
+  font-weight: 700 !important;
+  color: var(--text-main) !important;
+  margin-bottom: 0.5rem !important;
+  margin-top: 0 !important;
+  margin-left: 0 !important;
+  margin-right: 0 !important;
+  font-family: 'Gowun Dodum', sans-serif !important;
+  display: block !important;
+  line-height: inherit !important;
+}
+
+.UserRegisterSubtitle {
+  color: var(--text-sub);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserRegisterForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+
+.UserRegisterCodeLabel {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.75rem;
+  font-family: 'Gowun Dodum', sans-serif;
+  text-align: center;
+}
+
+.UserRegisterCodeInput {
+  width: 100%;
+  padding: 1rem 1.5rem;
+  border: 2px solid #E0E0E0;
+  border-radius: 0.75rem;
+  outline: none;
+  font-family: 'Gowun Dodum', sans-serif;
+  text-transform: uppercase;
+  text-align: center;
+  font-size: 1.875rem;
+  letter-spacing: 0.5em;
+  font-weight: 700;
+  transition: border-color 0.2s;
+}
+
+.UserRegisterCodeInput:focus {
+  border-color: var(--color-primary);
+}
+
+.UserRegisterCodeHint {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin-top: 0.5rem;
+  text-align: center;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserRegisterLoginButton {
+  width: 100%;
+  padding-top: 1rem;
+  padding-bottom: 1rem;
+}
+
+.UserRegisterBackButton {
+  width: 100%;
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-family: 'Gowun Dodum', sans-serif;
+  transition: color 0.2s;
+}
+
+.UserRegisterBackButton:hover {
+  color: var(--text-main);
+}
+
+/* LiveMap */
+.LiveMapPage {
+  padding: 0;
+  width: 100%;
+  max-width: 100vw;
+  overflow-x: hidden;
+}
+
+.LiveMapCard {
+  background-color: #FFFFFF;
+  border-radius: 0;
+  border: none;
+  padding: 1.5rem;
+  box-shadow: none;
+  width: 100%;
+  max-width: 100vw;
+}
+
+.LiveMapTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.LiveMapIcon,
+.LiveMapTitle svg.LiveMapIcon {
+  width: 1.75rem !important;
+  height: 1.75rem !important;
+  max-width: 1.75rem !important;
+  max-height: 1.75rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.LiveMapStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.LiveMapStatusDot {
+  width: 0.75rem;
+  height: 0.75rem;
+  border-radius: 50%;
+}
+
+.LiveMapStatusDotActive {
+  background-color: #22C55E;
+}
+
+.LiveMapStatusDotInactive {
+  background-color: #9CA3AF;
+}
+
+.LiveMapStatusText {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+.UserLiveLocationMap {
+  width: 100vw;
+  max-width: 100vw;
+  height: calc(100vh - 200px);
+  min-height: 500px;
+  border-radius: 0;
+  margin-left: calc(-1.5rem);
+  margin-right: calc(-1.5rem);
+  margin-bottom: 1rem;
+}
+
+.CurrentLocationInfo {
+  background-color: #F9FAFB;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.CurrentLocationLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-sub);
+  margin-bottom: 0.25rem;
+}
+
+.CurrentLocationAddress {
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+/* UserListItem */
+.UserListItem {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 1.5rem;
+  display: flex;
+  align-items: center;
+  gap: 1.5rem;
+  box-shadow: var(--shadow-soft);
+  min-height: 120px;
+  width: 100%;
+}
+
+.UserListItemImage {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid var(--color-primary);
+  flex-shrink: 0;
+}
+
+.UserListItemInfo {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 0.75rem;
+  font-size: 1rem;
+  min-width: 0;
+}
+
+.UserListItemName {
+  grid-column: span 2;
+  font-weight: 700;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: color 0.2s;
+  font-family: 'Gowun Dodum', sans-serif;
+  font-size: 1.125rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.UserListItemName:hover {
+  color: var(--color-primary);
+}
+
+.UserListItemCode {
+  font-size: 0.9375rem;
+  color: var(--text-sub);
+  margin-bottom: 0.25rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.UserListItemCodeLabel {
+  font-weight: 600;
+}
+
+.UserListItemCodeValue {
+  margin-left: 0.25rem;
+}
+
+.UserListItemHeight,
+.UserListItemAge,
+.UserListItemGender {
+  font-size: 0.9375rem;
+  color: var(--text-sub);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.UserListItemLocation {
+  display: flex;
+  align-items: center;
+}
+
+.UserListItemLocationContent {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #16A34A;
+}
+
+.UserListItemLocationDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #22C55E;
+  border-radius: 50%;
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.UserListItemLocationText {
+  font-weight: 600;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserListItemNoLocation {
+  font-size: 0.875rem;
+  color: var(--text-light);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserListItemDeleteButton {
+  padding: 0.5rem 1rem;
+  background-color: #EF4444;
+  color: #FFFFFF;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserListItemDeleteButton:hover {
+  background-color: #DC2626;
+}
+
+/* GuardianHome */
+.GuardianHomePage {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.GuardianHomeHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.GuardianHomeTitle {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.GuardianHomeActions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.ViewLocationMapButton,
+.AddUserButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ViewLocationMapIcon,
+.AddUserIcon,
+.AddUserButton svg.AddUserIcon,
+.ViewLocationMapIcon,
+.ViewLocationMapButton svg.ViewLocationMapIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  flex-shrink: 0 !important;
+}
+
+.GuardianHomeLoading,
+.GuardianHomeError,
+.GuardianHomeEmpty {
+  text-align: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  color: var(--text-sub);
+}
+
+.GuardianHomeUserList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  width: 100%;
+}
+
+.RetryButton {
+  margin-top: 1rem;
+}
+
+.AddUserForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.AddUserPhotoSection {
+  margin-bottom: 1rem;
+}
+
+.AddUserPhotoLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.AddUserPhotoContent {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.AddUserPhotoPreview {
+  width: 8rem;
+  height: 8rem;
+  border-radius: 0.5rem;
+  background-color: #F3F4F6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  border: 2px solid #E0E0E0;
+}
+
+.AddUserPhotoPreviewImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.AddUserPhotoPlaceholderIcon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--text-sub);
+}
+
+.AddUserPhotoFileInput {
+  display: none;
+}
+
+.SelectPhotoButton,
+.DeletePhotoButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+
+.SelectPhotoIcon,
+.SelectPhotoButton svg.SelectPhotoIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  flex-shrink: 0 !important;
+}
+
+.AddUserCodeField,
+.AddUserNameField,
+.AddUserGenderField,
+.AddUserAgeField,
+.AddUserHeightField,
+.AddUserWeightField,
+.AddUserGuardianPhoneField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.AddUserCodeLabel,
+.AddUserNameLabel,
+.AddUserGenderLabel,
+.AddUserAgeLabel,
+.AddUserHeightLabel,
+.AddUserWeightLabel,
+.AddUserGuardianPhoneLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.AddUserRequired {
+  color: #EF4444;
+}
+
+.AddUserCodeHint {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+}
+
+.AddUserCodeError {
+  font-size: 0.75rem;
+  color: #EF4444;
+}
+
+.AddUserCodeInput,
+.AddUserNameInput,
+.AddUserGenderInput,
+.AddUserAgeInput,
+.AddUserHeightInput,
+.AddUserWeightInput,
+.AddUserGuardianPhoneInput {
+  width: 100%;
+  padding: 0.75rem;
+  border: 2px solid #E0E0E0;
+  border-radius: 0.75rem;
+  outline: none;
+  font-family: 'Gowun Dodum', sans-serif;
+  transition: border-color 0.2s;
+}
+
+.AddUserCodeInput:focus,
+.AddUserNameInput:focus,
+.AddUserGenderInput:focus,
+.AddUserAgeInput:focus,
+.AddUserHeightInput:focus,
+.AddUserWeightInput:focus,
+.AddUserGuardianPhoneInput:focus {
+  border-color: var(--color-primary);
+}
+
+.AddUserActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+  margin-top: 1rem;
+}
+
+.AddUserCancelButton,
+.AddUserSubmitButton {
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.AddUserSubmitButton {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.AddUserSubmitButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+.AddUserCancelButton {
+  background-color: #F5F5F5;
+  color: var(--text-main);
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.AddUserCancelButton:hover {
+  background-color: #E0E0E0;
+}
+
+/* GuardianUserDetail */
+.GuardianUserDetailPage {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.UserProfileCard {
+  margin-bottom: 1rem;
+}
+
+.UserProfileContent {
+  padding: 1rem;
+}
+
+.UserProfileHeader {
+  display: flex;
+  gap: 1.5rem;
+  align-items: flex-start;
+}
+
+.UserProfileImage {
+  width: 6rem;
+  height: 6rem;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 3px solid var(--color-primary);
+  flex-shrink: 0;
+}
+
+.UserProfileGrid {
+  flex: 1;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.UserNameLabel,
+.UserGenderLabel,
+.UserAgeLabel,
+.UserHeightLabel,
+.UserWeightLabel,
+.UserDiseaseLabel,
+.GuardianPhoneLabel,
+.ExerciseStatusLabel {
+  display: block;
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin-bottom: 0.25rem;
+}
+
+.UserNameValue,
+.UserGenderValue,
+.UserAgeValue,
+.UserHeightValue,
+.UserWeightValue,
+.UserDiseaseValue,
+.GuardianPhoneValue,
+.ExerciseStatusValue {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+}
+
+.ExerciseStatusActive {
+  color: var(--color-primary);
+}
+
+.ExerciseStatusInactive {
+  color: var(--text-sub);
+}
+
+.GuardianPhoneRow {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.EmergencyContactButton {
+  padding: 0.25rem 0.75rem;
+  background-color: #EF4444;
+  color: #FFFFFF;
+  border-radius: 0.5rem;
+  font-size: 0.75rem;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.EmergencyContactButton:hover {
+  background-color: #DC2626;
+}
+
+.UserProfileFooter {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid #E0E0E0;
+}
+
+.UserProfileFooterLeft,
+.UserProfileFooterRight {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.EditUserButton,
+.GuardianEmergencyContactButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.EditUserButtonIcon,
+.EditUserButton svg.EditUserButtonIcon,
+.GuardianEmergencyContactIcon,
+.GuardianEmergencyContactButton svg.GuardianEmergencyContactIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  flex-shrink: 0 !important;
+}
+
+.SendSurveyButton,
+.ViewSurveyResultButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+/* UserDetail 추가 스타일 */
+.UserLocationSection {
+  margin-bottom: 1rem;
+}
+
+.UserLocationTitle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.UserLocationTrackingBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  color: #16A34A;
+}
+
+.UserLocationTrackingDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: #22C55E;
+  border-radius: 50%;
+}
+
+.UserLocationCoordinates {
+  margin-bottom: 0.5rem;
+}
+
+.UserLocationCoordinatesText {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+.ExerciseRecommendationCard {
+  margin-bottom: 1rem;
+}
+
+.ExerciseRecommendationContent {
+  padding: 1rem;
+}
+
+.ExerciseRecommendationHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.ExerciseRecommendationTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.ExerciseRecommendationButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.ExerciseRecommendationLoadingIcon,
+.ExerciseRecommendationButton svg.ExerciseRecommendationLoadingIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  flex-shrink: 0 !important;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  from {
+    transform: rotate(0deg);
+  }
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.StretchVideoRecommendationBox {
+  background-color: #EFF6FF;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.StretchVideoRecommendationTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.StretchVideoRecommendationList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.StretchVideoRecommendationItem {
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.StretchVideoLink {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: text-decoration 0.2s;
+}
+
+.StretchVideoLink:hover {
+  text-decoration: underline;
+}
+
+.IntervalWorkoutRecommendationList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.IntervalWorkoutRecommendationItem {
+  background-color: #F0FDF4;
+  padding: 1rem;
+  border-radius: 0.5rem;
+}
+
+.IntervalWorkoutTitle {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.IntervalWorkoutDetails {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ExerciseCautionBox {
+  background-color: #FFFBEB;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ExerciseCautionTitle {
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.ExerciseCautionPainArea {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-weight: 400;
+}
+
+.ExerciseCautionContent {
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.ExerciseCautionList {
+  list-style-type: disc;
+  list-style-position: inside;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.ExerciseRecommendationError {
+  background-color: #FEF2F2;
+  padding: 1rem;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.ExerciseRecommendationErrorMessage {
+  font-size: 0.875rem;
+  color: #DC2626;
+}
+
+.ApplyRecommendationSection {
+  margin-top: 1rem;
+}
+
+.ApplyRecommendationButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.ApplyRecommendationIcon,
+.ApplyRecommendationButton svg.ApplyRecommendationIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  flex-shrink: 0 !important;
+}
+
+.ExerciseRecommendationEmpty {
+  text-align: center;
+  color: var(--text-sub);
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.UserCommunicationGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .UserCommunicationGrid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+.GuardianChatCard {
+  height: 100%;
+}
+
+.GuardianChatContent {
+  padding: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.GuardianChatTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.GuardianChatIcon,
+.GuardianChatTitle svg.GuardianChatIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.GuardianChatSubtitle {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-weight: 400;
+}
+
+.GuardianChatMessageList {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.GuardianChatEmpty {
+  text-align: center;
+  color: var(--text-sub);
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+}
+
+.GuardianChatMessageRow {
+  display: flex;
+}
+
+.GuardianChatMessageRowRight {
+  justify-content: flex-end;
+}
+
+.GuardianChatMessageRowLeft {
+  justify-content: flex-start;
+}
+
+.GuardianChatMessageBubble {
+  max-width: 20rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+}
+
+.GuardianChatMessageBubbleGuardian {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.GuardianChatMessageBubbleUser {
+  background-color: #E5E7EB;
+  color: var(--text-main);
+}
+
+.GuardianChatMessageSender {
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.GuardianChatMessageText {
+  font-size: 0.875rem;
+}
+
+.GuardianChatMessageTime {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  opacity: 0.7;
+}
+
+.GuardianChatInputRow {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.GuardianChatInput {
+  flex: 1;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.GuardianChatInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.GuardianChatSendButton {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.GuardianChatSendButtonIcon,
+.GuardianChatSendButton svg.GuardianChatSendButtonIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  flex-shrink: 0 !important;
+}
+
+.RealtimeMonitoringSection {
+  margin-bottom: 1rem;
+}
+
+.RealtimeMonitoringTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.EditUserForm {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.EditGuardianPhoneField,
+.EditWeightField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.EditUserActions {
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+.EditUserCancelButton,
+.EditUserSaveButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
+
+.EditUserSaveButton {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.EditUserSaveButton:hover {
+  background-color: var(--color-primary-hover);
+}
+
+/* Exercise Prescription Form */
+.ExercisePrescriptionCard {
+  height: 100%;
+}
+
+.ExercisePrescriptionContent {
+  padding: 1rem;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.ExercisePrescriptionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.ExercisePrescriptionIcon,
+.ExercisePrescriptionTitle svg.ExercisePrescriptionIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.ExercisePrescriptionForm {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.StartStretchingSection,
+.EndStretchingSection {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.StartStretchingLabel,
+.EndStretchingLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.StartStretchingOptions,
+.EndStretchingOptions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.StartStretchingOptionButton,
+.EndStretchingOptionButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  border: 2px solid;
+  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  font-weight: 600;
+}
+
+.StartStretchingOptionButtonActive,
+.EndStretchingOptionButtonActive {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border-color: var(--color-primary);
+}
+
+.StartStretchingOptionButtonInactive,
+.EndStretchingOptionButtonInactive {
+  background-color: #FFFFFF;
+  color: var(--text-main);
+  border-color: #D1D5DB;
+}
+
+.StartStretchingOptionButtonInactive:hover,
+.EndStretchingOptionButtonInactive:hover {
+  border-color: var(--color-primary);
+}
+
+.StartStretchingUrlField,
+.EndStretchingUrlField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.StartStretchingUrlLabel,
+.EndStretchingUrlLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.StartStretchingUrlInput,
+.EndStretchingUrlInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.StartStretchingUrlInput:focus,
+.EndStretchingUrlInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.IntervalExerciseSection {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.IntervalExerciseLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.IntervalWalkingField,
+.IntervalRunningField,
+.IntervalSetsField {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.IntervalWalkingLabel,
+.IntervalRunningLabel,
+.IntervalSetsLabel {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.IntervalWalkingInput,
+.IntervalRunningInput,
+.IntervalSetsInput {
+  width: 100%;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.IntervalWalkingInput:focus,
+.IntervalRunningInput:focus,
+.IntervalSetsInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.SendPrescriptionButton {
+  width: 100%;
+  margin-top: 1rem;
+}
+
+/* Health Trend Section */
+.HealthTrendSection {
+  margin-bottom: 1rem;
+}
+
+.HealthTrendTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.HealthTrendGrid {
+  display: grid;
+  grid-template-columns: repeat(1, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+@media (min-width: 768px) {
+  .HealthTrendGrid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+/* UserDetail Loading/Error */
+.UserDetailLoading,
+.UserDetailError {
+  text-align: center;
+  padding-top: 2rem;
+  padding-bottom: 2rem;
+  color: var(--text-sub);
+}
+
+/* AppButton */
+.AppButtonBase {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+  transition: all 0.2s;
+  min-height: 44px;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.AppButtonSolid {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+  border: none;
+  cursor: pointer;
+}
+
+.AppButtonSolid:hover {
+  background-color: var(--color-primary-hover);
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.AppButtonSolid:active {
+  transform: scale(0.95);
+}
+
+.AppButtonOutline {
+  border: 2px solid var(--color-primary);
+  color: var(--color-primary);
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.AppButtonOutline:hover {
+  background-color: var(--color-primary);
+  color: #FFFFFF;
+}
+
+.AppButtonGhost {
+  border: 1px solid #D1D5DB;
+  color: var(--text-main);
+  background-color: transparent;
+  cursor: pointer;
+}
+
+.AppButtonGhost:hover {
+  background-color: #F3F4F6;
+}
+
+.AppButtonDisabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.AppButtonEnabled {
+  cursor: pointer;
+}
+
+/* AppCard */
+.AppCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 1rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.AppCardFooter {
+  margin-top: 1rem;
+  padding-top: 1rem;
+  border-top: 1px solid #E0E0E0;
+}
+
+/* UserLocationMap */
+.UserLocationMapWrapper {
+  width: 100%;
+}
+
+.UserLocationMapWrapperSmall {
+  height: 10rem;
+}
+
+.UserLocationMapWrapperLarge {
+  height: 32rem;
+  min-height: 400px;
+}
+
+.UserLocationMapContainer,
+.NaverUserLocationMapContainer {
+  width: 100%;
+  height: 100%;
+  border-radius: 0.5rem;
+}
+
+/* UserVitalsNow */
+.UserVitalsNowContent {
+  padding: 1rem;
+}
+
+.UserVitalsNowTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.UserVitalsNowIcon,
+.UserVitalsNowTitle svg.UserVitalsNowIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.UserVitalsNowValueWrapper {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.UserVitalsNowValue {
+  font-size: 2rem;
+  font-weight: 700;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserVitalsNowValueActive {
+  color: var(--color-primary);
+}
+
+.UserVitalsNowValueInactive {
+  color: var(--text-light);
+}
+
+.UserVitalsNowLabel {
+  font-size: 0.75rem;
+  color: var(--text-sub);
+  margin-top: 0.25rem;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.UserVitalsNowWaiting {
+  margin-top: 0.5rem;
+  text-align: center;
+}
+
+.UserVitalsNowWaiting p {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+/* Chart Components */
+.WeightTrendChartContent,
+.HeartRateTrendChartContent,
+.ActivityTrendChartContent {
+  padding: 1rem;
+}
+
+.WeightTrendChartTitle,
+.HeartRateTrendChartTitle,
+.ActivityTrendChartTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.WeightTrendChartContainer,
+.HeartRateTrendChartContainer,
+.ActivityTrendChartContainer {
+  height: 16rem;
+}
+
+/* ConfirmDialog */
+.ConfirmDialogMessage {
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+/* AppModal */
+.AppModalOverlay {
+  position: fixed;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 50;
+}
+
+.AppModalContainer {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  max-width: 32rem;
+  width: 100%;
+  margin-left: 1rem;
+  margin-right: 1rem;
+  max-height: 90vh;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-soft);
+}
+
+.AppModalContainerWide {
+  max-width: 56rem;
+}
+
+.AppModalContainerNormal {
+  max-width: 32rem;
+}
+
+.AppModalHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem;
+  border-bottom: 1px solid #E0E0E0;
+}
+
+.AppModalTitle {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.AppModalCloseButton {
+  padding: 0.5rem;
+  border-radius: 0.5rem;
+  transition: background-color 0.2s;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.AppModalCloseButton:hover {
+  background-color: #F3F4F6;
+}
+
+.AppModalCloseButtonIcon,
+.AppModalCloseButton svg.AppModalCloseButtonIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  color: var(--text-sub) !important;
+  flex-shrink: 0 !important;
+}
+
+.AppModalBody {
+  padding: 1.5rem;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.AppModalFooter {
+  padding: 1.5rem;
+  border-top: 1px solid #E0E0E0;
+  display: flex;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}
+
+/* RouteMap */
+.RouteMapWrapper {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.RouteMapForm {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 1rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.RouteMapFormFields {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.RouteMapInput {
+  width: 100%;
+  padding: 0.75rem 1rem;
+  border: 1px solid #D1D5DB;
+  border-radius: 0.5rem;
+  outline: none;
+}
+
+.RouteMapInput:focus {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px rgba(139, 195, 74, 0.2);
+}
+
+.RouteMapLoadButton {
+  width: 100%;
+}
+
+.RouteMapContainer {
+  width: 100%;
+  height: 40rem;
+  min-height: 500px;
+  border-radius: 0.5rem;
+}
+
+/* GuardianAllUsersMap */
+.GuardianAllUsersMapPage {
+  padding: 1rem;
+}
+
+.GuardianAllUsersMapCard {
+  background-color: #FFFFFF;
+  border-radius: 1rem;
+  border: 1px solid #E0E0E0;
+  padding: 1.5rem;
+  box-shadow: var(--shadow-soft);
+}
+
+.GuardianAllUsersMapHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.GuardianAllUsersMapTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+}
+
+.GuardianAllUsersMapIcon,
+.GuardianAllUsersMapTitle svg.GuardianAllUsersMapIcon {
+  width: 0.875rem !important;
+  height: 0.875rem !important;
+  max-width: 0.875rem !important;
+  max-height: 0.875rem !important;
+  color: var(--color-primary) !important;
+  flex-shrink: 0 !important;
+}
+
+.GuardianAllUsersMapStatus {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.GuardianAllUsersMapStatusDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+}
+
+.GuardianAllUsersMapStatusDotActive {
+  background-color: #22C55E;
+}
+
+.GuardianAllUsersMapStatusDotInactive {
+  background-color: #9CA3AF;
+}
+
+.GuardianAllUsersMapStatusText {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+}
+
+.GuardianAllUsersMap {
+  width: 100%;
+  height: 40rem;
+  min-height: 500px;
+  border-radius: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.GuardianTrackedUsers {
+  margin-top: 1rem;
+}
+
+.GuardianTrackedUsersTitle {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.GuardianTrackedUsersList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.GuardianTrackedUserChip {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.75rem;
+  background-color: #F3F4F6;
+  border-radius: 1rem;
+  font-size: 0.875rem;
+  color: var(--text-main);
+}
+
+.GuardianTrackedUserChipDot {
+  width: 0.5rem;
+  height: 0.5rem;
+  background-color: var(--color-primary);
+  border-radius: 50%;
+}
+
+/* PrescriptionPopup */
+.PrescriptionPopupContent {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.PrescriptionPopupMessage {
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.PrescriptionDetails {
+  background-color: rgba(139, 195, 74, 0.1);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-top: 1rem;
+}
+
+.PrescriptionDetailItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid rgba(139, 195, 74, 0.2);
+}
+
+.PrescriptionDetailItem:last-child {
+  border-bottom: none;
+}
+
+.PrescriptionDetailLabel {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.PrescriptionPopupQuestion {
+  color: var(--text-main);
+  font-weight: 600;
+  margin-top: 1rem;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+/* ShopPopup */
+.ShopPopupContent {
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.ShopSection {
+  margin-bottom: 1rem;
+}
+
+.ShopSectionTitle {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--text-main);
+  margin-bottom: 1rem;
+}
+
+.ShopItemsGrid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.ShopItem {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 1rem;
+  border: 2px solid;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.ShopItemAvailable {
+  border-color: var(--color-primary);
+}
+
+.ShopItemAvailable:hover {
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+}
+
+.ShopItemUnavailable {
+  border-color: #D1D5DB;
+  opacity: 0.5;
+}
+
+.ShopItemImageWrapper {
+  width: 100%;
+  aspect-ratio: 1 / 1;
+  margin-bottom: 0.5rem;
+}
+
+.ShopItemImage {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 0.25rem;
+}
+
+.ShopItemName {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-main);
+  margin-bottom: 0.25rem;
+}
+
+.ShopItemPrice {
+  font-size: 0.875rem;
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
+.ShopItemInsufficient {
+  font-size: 0.75rem;
+  color: #EF4444;
+  margin-top: 0.25rem;
+}
+
+.SurveyPopupMessage1,
+.SurveyPopupMessage2 {
+  color: var(--text-main);
+  margin-bottom: 0.5rem;
+}
+
+.SurveyRemindLaterButton,
+.SurveyStartButton {
+  padding: 0.5rem 1rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+}
