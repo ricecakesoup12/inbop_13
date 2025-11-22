@@ -1,65 +1,68 @@
 <template>
-  <div v-if="loading" class="text-center py-12">
-    <p class="text-text-sub font-gowun">불러오는 중...</p>
+  <div v-if="loading" class="UserDetailLoading">
+    <p>불러오는 중...</p>
   </div>
 
-  <div v-else-if="error" class="text-center py-12">
-    <p class="text-red-600 font-gowun">{{ error }}</p>
+  <div v-else-if="error" class="UserDetailError">
+    <p>{{ error }}</p>
   </div>
 
-  <div v-else-if="user" class="space-y-6">
+  <div v-else-if="user" class="GuardianUserDetailPage">
     <!-- 카드형 사용자 정보 -->
-    <AppCard>
-      <div class="p-6">
-        <div class="flex items-center gap-6 mb-6">
+    <AppCard class="UserProfileCard">
+      <div class="UserProfileContent">
+        <div class="UserProfileHeader">
           <img
             :src="user.faceUrl || defaultFace"
             alt="프로필"
-            class="w-24 h-24 rounded-full object-cover border-4 border-accent"
+            class="UserProfileImage"
           />
-          <div class="flex-1 grid grid-cols-2 gap-4">
+          <div class="UserProfileGrid">
             <div>
-              <span class="text-sm text-text-sub font-gowun">이름</span>
-              <p class="text-lg font-semibold text-text-main font-gowun">{{ user.name }}</p>
+              <span class="UserNameLabel">이름</span>
+              <p class="UserNameValue">{{ user.name }}</p>
             </div>
             <div>
-              <span class="text-sm text-text-sub font-gowun">성별</span>
-              <p class="text-lg font-semibold text-text-main font-gowun">{{ user.gender }}</p>
+              <span class="UserGenderLabel">성별</span>
+              <p class="UserGenderValue">{{ user.gender }}</p>
             </div>
             <div>
-              <span class="text-sm text-text-sub font-gowun">나이</span>
-              <p class="text-lg font-semibold text-text-main font-gowun">{{ user.age }}세</p>
+              <span class="UserAgeLabel">나이</span>
+              <p class="UserAgeValue">{{ user.age }}세</p>
             </div>
             <div>
-              <span class="text-sm text-text-sub font-gowun">키</span>
-              <p class="text-lg font-semibold text-text-main font-gowun">{{ user.height }}cm</p>
+              <span class="UserHeightLabel">키</span>
+              <p class="UserHeightValue">{{ user.height }}cm</p>
             </div>
             <div>
-              <span class="text-sm text-text-sub font-gowun">몸무게</span>
-              <p class="text-lg font-semibold text-text-main font-gowun">{{ user.weight || '-' }}kg</p>
+              <span class="UserWeightLabel">몸무게</span>
+              <p class="UserWeightValue">{{ user.weight || '-' }}kg</p>
             </div>
             <div>
-              <span class="text-sm text-text-sub font-gowun">지병</span>
-              <p class="text-lg font-semibold text-text-main font-gowun">
+              <span class="UserDiseaseLabel">지병</span>
+              <p class="UserDiseaseValue">
                 {{ user.chronicDiseases?.join(', ') || '없음' }}
               </p>
             </div>
             <div v-if="user.guardianPhone">
-              <span class="text-sm text-text-sub font-gowun">보호자 연락처</span>
-              <div class="flex items-center gap-2 mt-1">
-                <p class="text-lg font-semibold text-text-main font-gowun flex items-center gap-1">
+              <span class="GuardianPhoneLabel">보호자 연락처</span>
+              <div class="GuardianPhoneRow">
+                <p class="GuardianPhoneValue">
                   📞 {{ user.guardianPhone }}
                 </p>
                 <a :href="`tel:${user.guardianPhone}`">
-                  <button class="px-3 py-1 bg-red-500 hover:bg-red-600 text-white text-xs rounded-lg font-gowun transition-colors">
+                  <button class="EmergencyContactButton">
                     긴급 연락
                   </button>
                 </a>
               </div>
             </div>
             <div>
-              <span class="text-sm text-text-sub font-gowun">운동 상태</span>
-              <p class="text-lg font-semibold font-gowun" :class="exerciseStatus?.isExercising ? 'text-green-600' : 'text-gray-400'">
+              <span class="ExerciseStatusLabel">운동 상태</span>
+              <p
+                class="ExerciseStatusValue"
+                :class="exerciseStatus?.isExercising ? 'ExerciseStatusActive' : 'ExerciseStatusInactive'"
+              >
                 {{ exerciseStatus?.isExercising ? '🏃 운동 중' : '휴식 중' }}
               </p>
             </div>
@@ -67,29 +70,32 @@
         </div>
       </div>
       <template #footer>
-        <div class="flex justify-between items-center gap-3">
-          <div class="flex gap-2">
-            <AppButton variant="ghost" @click="openEditModal">
-              <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <div class="UserProfileFooter">
+          <div class="UserProfileFooterLeft">
+            <AppButton variant="ghost" class="EditUserButton" @click="openEditModal">
+              <svg class="EditUserButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
               </svg>
               정보 수정
             </AppButton>
             <a v-if="user.guardianPhone" :href="`tel:${user.guardianPhone}`">
-              <AppButton variant="outline" class="bg-red-50 hover:bg-red-100 text-red-600 border-red-300">
-                <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <AppButton
+                variant="outline"
+                class="GuardianEmergencyContactButton"
+              >
+                <svg class="GuardianEmergencyContactIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
                 </svg>
                 긴급 연락하기
               </AppButton>
             </a>
           </div>
-          <div class="flex gap-3">
+          <div class="UserProfileFooterRight">
             <RouterLink :to="`/guardian/users/${id}/survey/send`">
-              <AppButton variant="solid">설문 보내기</AppButton>
+              <AppButton variant="solid" class="SendSurveyButton">설문 보내기</AppButton>
             </RouterLink>
             <RouterLink :to="`/guardian/users/${id}/survey/result`">
-              <AppButton variant="ghost">설문 보기</AppButton>
+              <AppButton variant="ghost" class="ViewSurveyResultButton">설문 보기</AppButton>
             </RouterLink>
           </div>
         </div>
@@ -97,17 +103,17 @@
     </AppCard>
 
     <!-- 지도 -->
-    <div>
-      <h3 class="text-lg font-semibold text-text-main mb-3 font-gowun flex items-center gap-2">
+    <div class="UserLocationSection">
+      <h3 class="UserLocationTitle">
         <span>현재 위치</span>
-        <span v-if="userLocation" class="text-xs text-green-500 font-normal flex items-center gap-1">
-          <span class="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
+        <span v-if="userLocation" class="UserLocationTrackingBadge">
+          <span class="UserLocationTrackingDot"></span>
           실시간 추적 중
         </span>
       </h3>
       <!-- 주소 표시 -->
-      <div v-if="userLocation" class="mb-3 p-3 bg-blue-50 rounded-lg">
-        <div class="text-sm text-gray-700 font-gowun">
+      <div v-if="userLocation" class="UserLocationCoordinates">
+        <div class="UserLocationCoordinatesText">
           📍 위도: {{ userLocation.lat.toFixed(4) }}, 경도: {{ userLocation.lng.toFixed(4) }}
         </div>
       </div>
@@ -115,18 +121,18 @@
     </div>
 
     <!-- 운동처방 도우미 (AI 기반 스트레칭/인터벌) -->
-    <AppCard>
-      <div class="p-6 bg-green-50">
-        <div class="flex items-center justify-between mb-4">
-          <h3 class="text-lg font-semibold text-text-main font-gowun">
+    <AppCard class="ExerciseRecommendationCard">
+      <div class="ExerciseRecommendationContent">
+        <div class="ExerciseRecommendationHeader">
+          <h3 class="ExerciseRecommendationTitle">
             운동 추천 도우미
           </h3>
           <AppButton 
             @click="loadStretchRecommendation" 
             :disabled="stretchLoading"
-            size="sm"
+            class="ExerciseRecommendationButton"
           >
-            <svg v-if="stretchLoading" class="animate-spin -ml-1 mr-2 h-4 w-4" fill="none" viewBox="0 0 24 24">
+            <svg v-if="stretchLoading" class="ExerciseRecommendationLoadingIcon" fill="none" viewBox="0 0 24 24">
               <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
               <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
             </svg>
@@ -135,10 +141,13 @@
         </div>
 
         <!-- 추천 결과 표시 -->
-        <div v-if="stretchRecommendation" class="space-y-4">
+        <div v-if="stretchRecommendation" class="ExerciseRecommendationContent">
           <!-- 강도 ver 운동 추천 박스 (스트레칭 영상 2개) -->
-          <div v-if="stretchRecommendation.스트레칭영상?.length > 0" class="p-3 bg-blue-50 border-l-4 border-blue-400 rounded">
-            <h4 class="text-sm font-semibold text-blue-800 mb-2 font-gowun">
+          <div
+            v-if="stretchRecommendation.스트레칭영상?.length > 0"
+            class="StretchVideoRecommendationBox"
+          >
+            <h4 class="StretchVideoRecommendationTitle">
               <template v-if="stretchRecommendation.인터벌운동?.length > 0">
                 {{ stretchRecommendation.인터벌운동[0].강도 === 'low' ? '낮음' : stretchRecommendation.인터벌운동[0].강도 === 'medium' ? '중간' : '높음' }} ver 운동 추천
               </template>
@@ -146,27 +155,27 @@
                 운동 추천
               </template>
             </h4>
-            <div class="space-y-1">
+            <div class="StretchVideoRecommendationList">
               <div 
                 v-for="(video, idx) in stretchRecommendation.스트레칭영상.slice(0, 2)" 
                 :key="idx"
-                class="text-sm text-blue-700 font-gowun"
+                class="StretchVideoRecommendationItem"
               >
-                {{ video.제목 }}: <a :href="video.영상주소" target="_blank" class="text-blue-600 hover:underline">{{ video.영상주소 }}</a>
+                {{ video.제목 }}: <a :href="video.영상주소" target="_blank" class="StretchVideoLink">{{ video.영상주소 }}</a>
               </div>
             </div>
           </div>
 
           <!-- 인터벌 운동 (초록색) -->
           <div v-if="stretchRecommendation.인터벌운동?.length > 0">
-            <div class="space-y-3">
+            <div class="IntervalWorkoutRecommendationList">
               <div 
                 v-for="(interval, idx) in stretchRecommendation.인터벌운동" 
                 :key="idx"
-                class="p-4 bg-green-100 rounded-lg"
+                class="IntervalWorkoutRecommendationItem"
               >
-                <div class="text-md font-bold text-green-800 mb-2 font-gowun">{{ interval.루틴명 }}</div>
-                <div class="text-sm text-green-800 font-gowun space-y-1">
+                <div class="IntervalWorkoutTitle">{{ interval.루틴명 }}</div>
+                <div class="IntervalWorkoutDetails">
                   <div>세트 수: {{ interval.세트수 }}</div>
                   <div>운동 시간: {{ interval.운동시간분 }}분</div>
                   <div>휴식 시간: {{ interval.휴식시간분 }}분</div>
@@ -176,17 +185,20 @@
           </div>
 
           <!-- 주의사항 -->
-          <div v-if="(stretchRecommendation.주의사항 && stretchRecommendation.주의사항.length > 0) || (stretchRecommendation.인터벌운동?.length > 0 && stretchRecommendation.인터벌운동[0].설명)" class="p-3 bg-red-50 border-l-4 border-red-400 rounded">
-            <h4 class="text-sm font-semibold text-red-800 mb-2 font-gowun">
+          <div
+            v-if="(stretchRecommendation.주의사항 && stretchRecommendation.주의사항.length > 0) || (stretchRecommendation.인터벌운동?.length > 0 && stretchRecommendation.인터벌운동[0].설명)"
+            class="ExerciseCautionBox"
+          >
+            <h4 class="ExerciseCautionTitle">
               주의사항
-              <span v-if="stretchRecommendation.통증부위" class="ml-2 px-2 py-1 bg-orange-500 text-white rounded-md text-xs">
+              <span v-if="stretchRecommendation.통증부위" class="ExerciseCautionPainArea">
                 통증 부위: {{ stretchRecommendation.통증부위 }}
               </span>
             </h4>
-            <div class="text-sm text-red-700 font-gowun space-y-2">
+            <div class="ExerciseCautionContent">
               <!-- AI가 추천한 주의사항 목록 -->
               <div v-if="stretchRecommendation.주의사항 && stretchRecommendation.주의사항.length > 0">
-                <ul class="list-disc list-inside space-y-1">
+                <ul class="ExerciseCautionList">
                   <li v-for="(caution, idx) in stretchRecommendation.주의사항" :key="idx">
                     {{ caution }}
                   </li>
@@ -200,20 +212,20 @@
           </div>
 
           <!-- 실패 메시지 -->
-          <div v-if="stretchRecommendation.실패이유" class="p-4 bg-gray-100 rounded">
-            <div class="text-sm text-gray-600 font-gowun">
+          <div v-if="stretchRecommendation.실패이유" class="ExerciseRecommendationError">
+            <div class="ExerciseRecommendationErrorMessage">
               {{ stretchRecommendation.실패이유 }}
             </div>
           </div>
 
           <!-- 처방에 적용 버튼 -->
-          <div v-if="stretchRecommendation.인터벌운동?.length > 0" class="pt-2">
+          <div v-if="stretchRecommendation.인터벌운동?.length > 0" class="ApplyRecommendationSection">
             <AppButton 
               @click="applyRecommendationToPrescription" 
               variant="solid"
-              class="w-full bg-purple-600 hover:bg-purple-700 text-white"
+              class="ApplyRecommendationButton"
             >
-              <svg class="w-4 h-4 inline mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="ApplyRecommendationIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
               </svg>
               이 추천을 운동 처방에 적용하기
@@ -222,50 +234,50 @@
         </div>
 
         <!-- 초기 상태 -->
-        <div v-else-if="!stretchLoading" class="text-center py-8 text-gray-400 font-gowun">
+        <div v-else-if="!stretchLoading" class="ExerciseRecommendationEmpty">
           AI 버튼을 눌러 사용자의 상태에 맞는 운동을 추천받으세요
         </div>
       </div>
     </AppCard>
 
     <!-- 대화창과 처방 칸 (2열 레이아웃) -->
-    <div class="grid md:grid-cols-2 gap-6">
+    <div class="UserCommunicationGrid">
       <!-- 왼쪽: 대화창 -->
-      <AppCard>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold text-text-main mb-4 font-gowun flex items-center gap-2">
-            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <AppCard class="GuardianChatCard">
+        <div class="GuardianChatContent">
+          <h3 class="GuardianChatTitle">
+            <svg class="GuardianChatIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
             </svg>
             대화창
-            <span class="text-xs text-gray-500 font-normal">({{ user.name }}님과의 대화)</span>
+            <span class="GuardianChatSubtitle">({{ user.name }}님과의 대화)</span>
           </h3>
           
           <!-- 채팅 메시지 목록 -->
-          <div class="h-80 border rounded-lg p-4 overflow-y-auto bg-gray-50 mb-4 space-y-3">
-            <div v-if="chatMessages.length === 0" class="text-center text-gray-400 font-gowun py-8">
+          <div class="GuardianChatMessageList">
+            <div v-if="chatMessages.length === 0" class="GuardianChatEmpty">
               아직 대화 내용이 없습니다
             </div>
             <div 
               v-for="(chatMsg, index) in chatMessages" 
               :key="index" 
-              :class="chatMsg.sender === 'guardian' ? 'text-right' : 'text-left'"
+              :class="['GuardianChatMessageRow', chatMsg.sender === 'guardian' ? 'GuardianChatMessageRowRight' : 'GuardianChatMessageRowLeft']"
             >
               <div 
                 :class="[
-                  'inline-block max-w-[70%] rounded-lg p-3',
+                  'GuardianChatMessageBubble',
                   chatMsg.sender === 'guardian' 
-                    ? 'bg-blue-500 text-white' 
-                    : 'bg-white text-gray-800 border border-gray-200'
+                    ? 'GuardianChatMessageBubbleGuardian' 
+                    : 'GuardianChatMessageBubbleUser'
                 ]"
               >
-                <div class="text-xs opacity-75 mb-1 font-gowun">
+                <div class="GuardianChatMessageSender">
                   {{ chatMsg.senderName }}
                 </div>
-                <div class="text-sm font-gowun">
+                <div class="GuardianChatMessageText">
                   {{ chatMsg.message }}
                 </div>
-                <div class="text-xs opacity-75 mt-1 font-gowun">
+                <div class="GuardianChatMessageTime">
                   {{ formatChatTime(chatMsg.timestamp) }}
                 </div>
               </div>
@@ -273,15 +285,19 @@
           </div>
 
           <!-- 메시지 입력창 -->
-          <div class="flex gap-2">
+          <div class="GuardianChatInputRow">
             <input
               v-model="guardianChatInput"
               @keyup.enter="sendGuardianMessage"
-              class="flex-1 border-2 border-gray-200 rounded-lg px-4 py-3 text-sm focus:border-primary outline-none font-gowun"
+              class="GuardianChatInput"
               placeholder="메시지를 입력하세요..."
             />
-            <AppButton @click="sendGuardianMessage" variant="solid" class="px-6">
-              <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <AppButton
+              @click="sendGuardianMessage"
+              variant="solid"
+              class="GuardianChatSendButton"
+            >
+              <svg class="GuardianChatSendButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
               </svg>
             </AppButton>
@@ -290,84 +306,84 @@
       </AppCard>
 
       <!-- 오른쪽: 운동 처방 칸 -->
-      <AppCard>
-        <div class="p-6">
-          <h3 class="text-lg font-semibold text-text-main mb-4 font-gowun flex items-center gap-2">
-            <svg class="w-5 h-5 text-green-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <AppCard class="ExercisePrescriptionCard">
+        <div class="ExercisePrescriptionContent">
+          <h3 class="ExercisePrescriptionTitle">
+            <svg class="ExercisePrescriptionIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-3 7h3m-3 4h3m-6-4h.01M9 16h.01" />
             </svg>
             운동 처방
           </h3>
 
-          <form @submit.prevent="sendPrescription" class="space-y-4">
+          <form @submit.prevent="sendPrescription" class="ExercisePrescriptionForm">
             <!-- 시작 스트레칭 -->
-            <div>
-              <label class="block font-semibold mb-2 font-gowun text-sm">시작 스트레칭</label>
-              <div class="flex gap-2 mb-2">
+            <div class="StartStretchingSection">
+              <label class="StartStretchingLabel">시작 스트레칭</label>
+              <div class="StartStretchingOptions">
                 <button
                   type="button"
                   v-for="minutes in [5, 10, 15]"
                   :key="minutes"
                   @click="prescriptionForm.startStretchingMinutes = minutes"
                   :class="[
-                    'flex-1 py-2 px-3 rounded-lg border-2 transition-colors font-gowun',
+                    'StartStretchingOptionButton',
                     prescriptionForm.startStretchingMinutes === minutes
-                      ? 'bg-green-500 text-white border-green-500'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-green-300'
+                      ? 'StartStretchingOptionButtonActive'
+                      : 'StartStretchingOptionButtonInactive'
                   ]"
                 >
                   {{ minutes }}분
                 </button>
               </div>
-              <div>
-                <label class="block text-xs text-gray-600 mb-1 font-gowun">URL (선택사항)</label>
+              <div class="StartStretchingUrlField">
+                <label class="StartStretchingUrlLabel">URL (선택사항)</label>
                 <input
                   v-model="prescriptionForm.startStretchingUrl"
                   type="url"
-                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  class="StartStretchingUrlInput"
                   placeholder="https://example.com/stretching"
                 />
               </div>
             </div>
 
             <!-- 인터벌 운동 -->
-            <div class="space-y-3">
-              <label class="block font-semibold mb-2 font-gowun text-sm">인터벌 운동</label>
+            <div class="IntervalExerciseSection">
+              <label class="IntervalExerciseLabel">인터벌 운동</label>
               
               <!-- 걷기 -->
-              <div>
-                <label class="block text-xs text-gray-600 mb-1 font-gowun">걷기 (분)</label>
+              <div class="IntervalWalkingField">
+                <label class="IntervalWalkingLabel">걷기 (분)</label>
                 <input
                   v-model.number="prescriptionForm.walkingMinutes"
                   type="number"
                   min="1"
-                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  class="IntervalWalkingInput"
                   placeholder="걷기 시간 입력"
                   required
                 />
               </div>
 
               <!-- 뛰기 -->
-              <div>
-                <label class="block text-xs text-gray-600 mb-1 font-gowun">뛰기 (분)</label>
+              <div class="IntervalRunningField">
+                <label class="IntervalRunningLabel">뛰기 (분)</label>
                 <input
                   v-model.number="prescriptionForm.runningMinutes"
                   type="number"
                   min="1"
-                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  class="IntervalRunningInput"
                   placeholder="뛰기 시간 입력"
                   required
                 />
               </div>
 
               <!-- 세트 수 -->
-              <div>
-                <label class="block text-xs text-gray-600 mb-1 font-gowun">세트 수</label>
+              <div class="IntervalSetsField">
+                <label class="IntervalSetsLabel">세트 수</label>
                 <input
                   v-model.number="prescriptionForm.sets"
                   type="number"
                   min="1"
-                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  class="IntervalSetsInput"
                   placeholder="세트 수 입력"
                   required
                 />
@@ -375,30 +391,30 @@
             </div>
 
             <!-- 마무리 스트레칭 -->
-            <div>
-              <label class="block font-semibold mb-2 font-gowun text-sm">마무리 스트레칭</label>
-              <div class="flex gap-2 mb-2">
+            <div class="EndStretchingSection">
+              <label class="EndStretchingLabel">마무리 스트레칭</label>
+              <div class="EndStretchingOptions">
                 <button
                   type="button"
                   v-for="minutes in [5, 10, 15]"
                   :key="minutes"
                   @click="prescriptionForm.endStretchingMinutes = minutes"
                   :class="[
-                    'flex-1 py-2 px-3 rounded-lg border-2 transition-colors font-gowun',
+                    'EndStretchingOptionButton',
                     prescriptionForm.endStretchingMinutes === minutes
-                      ? 'bg-green-500 text-white border-green-500'
-                      : 'bg-white text-gray-700 border-gray-200 hover:border-green-300'
+                      ? 'EndStretchingOptionButtonActive'
+                      : 'EndStretchingOptionButtonInactive'
                   ]"
                 >
                   {{ minutes }}분
                 </button>
               </div>
-              <div>
-                <label class="block text-xs text-gray-600 mb-1 font-gowun">URL (선택사항)</label>
+              <div class="EndStretchingUrlField">
+                <label class="EndStretchingUrlLabel">URL (선택사항)</label>
                 <input
                   v-model="prescriptionForm.endStretchingUrl"
                   type="url"
-                  class="w-full border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+                  class="EndStretchingUrlInput"
                   placeholder="https://example.com/stretching"
                 />
               </div>
@@ -408,7 +424,7 @@
             <AppButton
               type="submit"
               variant="solid"
-              class="w-full py-3 bg-green-600 hover:bg-green-700"
+              class="SendPrescriptionButton"
               :disabled="prescriptionLoading"
             >
               {{ prescriptionLoading ? '전송 중...' : '처방 전송' }}
@@ -419,9 +435,9 @@
     </div>
 
     <!-- 트렌드 차트 -->
-    <div>
-      <h3 class="text-lg font-semibold text-text-main mb-3 font-gowun">건강 트렌드</h3>
-      <div class="grid md:grid-cols-2 gap-4">
+    <div class="HealthTrendSection">
+      <h3 class="HealthTrendTitle">건강 트렌드</h3>
+      <div class="HealthTrendGrid">
         <WeightTrendChart :data="dailyData.weight" />
         <HeartRateTrendChart :data="dailyData.hr" />
         <ActivityTrendChart :data="dailyData.activity" />
@@ -429,48 +445,57 @@
     </div>
 
     <!-- 실시간 바이탈 -->
-    <div>
-      <h3 class="text-lg font-semibold text-text-main mb-3 font-gowun">실시간 모니터링</h3>
+    <div class="RealtimeMonitoringSection">
+      <h3 class="RealtimeMonitoringTitle">실시간 모니터링</h3>
       <UserVitalsNow :vital="vital" />
     </div>
 
     <!-- 정보 수정 모달 -->
     <AppModal :open="showEditModal" title="사용자 정보 수정" @close="closeEditModal">
-      <form @submit.prevent="handleUpdateUser" class="space-y-4">
+      <form @submit.prevent="handleUpdateUser" class="EditUserForm">
         <!-- 보호자 연락처 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
+        <div class="EditGuardianPhoneField">
+          <label class="EditGuardianPhoneLabel">
             보호자 연락처
-            <span class="text-xs text-text-sub ml-2">(긴급 연락용)</span>
+            <span class="EditGuardianPhoneLabelHint">(긴급 연락용)</span>
           </label>
           <input
             v-model="editForm.guardianPhone"
             type="tel"
             placeholder="010-1234-5678"
             pattern="[0-9]{2,3}-[0-9]{3,4}-[0-9]{4}"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="EditGuardianPhoneInput"
           />
-          <p class="text-xs text-gray-500 mt-1 font-gowun">예: 010-1234-5678</p>
+          <p class="EditGuardianPhoneHint">예: 010-1234-5678</p>
         </div>
 
         <!-- 몸무게 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
+        <div class="EditWeightField">
+          <label class="EditWeightLabel">
             몸무게 (kg)
           </label>
           <input
             v-model.number="editForm.weight"
             type="number"
             placeholder="몸무게"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="EditWeightInput"
           />
         </div>
 
-        <div class="flex gap-3 pt-4">
-          <AppButton type="button" variant="ghost" @click="closeEditModal" class="flex-1">
+        <div class="EditUserActions">
+          <AppButton
+            type="button"
+            variant="ghost"
+            @click="closeEditModal"
+            class="EditUserCancelButton"
+          >
             취소
           </AppButton>
-          <AppButton type="submit" :disabled="updateLoading" class="flex-1">
+          <AppButton
+            type="submit"
+            :disabled="updateLoading"
+            class="EditUserSaveButton"
+          >
             {{ updateLoading ? '저장 중...' : '저장하기' }}
           </AppButton>
         </div>

@@ -1,8 +1,8 @@
 <template>
   <AppCard>
-    <div class="p-4">
-      <h3 class="font-semibold text-text-main mb-3 font-gowun">운동량</h3>
-      <div class="h-48">
+    <div class="ActivityTrendChartContent">
+      <h3 class="ActivityTrendChartTitle">운동량</h3>
+      <div class="ActivityTrendChartContainer">
         <Line v-if="chartData" :data="chartData" :options="options" />
       </div>
     </div>

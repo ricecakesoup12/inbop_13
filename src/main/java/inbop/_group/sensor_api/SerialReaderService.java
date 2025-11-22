@@ -73,11 +73,12 @@ public class SerialReaderService {
     @PostConstruct
     public void init() {
         System.out.println("BTSerialReader init...");
-        //openPortOnce(); // 한 번만 시도
-        
+        openPortOnce(); // 한 번만 시도
+        /*
         while (!running) {
             openPortOnce();
-        } 
+        }
+         */
     }
 
     /**

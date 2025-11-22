@@ -1,6 +1,6 @@
 <template>
   <div :class="wrapperClass">
-    <div ref="mapRef" class="w-full h-full rounded-xl border border-gray-200"></div>
+    <div ref="mapRef" class="NaverUserLocationMapContainer"></div>
   </div>
 </template>
 
@@ -21,7 +21,11 @@ const mapRef = ref<HTMLDivElement | null>(null)
 let map: any = null
 let marker: any = null
 
-const wrapperClass = computed(() => (props.small ? 'h-40' : 'h-64'))
+const wrapperClass = computed(() =>
+  props.small
+    ? 'UserLocationMapWrapper UserLocationMapWrapperSmall'
+    : 'UserLocationMapWrapper UserLocationMapWrapperLarge'
+)
 
 const NAVER_ID = import.meta.env.VITE_NAVER_CLIENT_ID as string
 

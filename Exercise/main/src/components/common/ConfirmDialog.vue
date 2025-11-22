@@ -1,6 +1,6 @@
 <template>
   <AppModal :open="open" :title="title" @close="$emit('cancel')">
-    <p class="text-text-sub mb-4 font-gowun">{{ message }}</p>
+    <p class="ConfirmDialogMessage">{{ message }}</p>
     <template #footer>
       <AppButton variant="ghost" @click="$emit('cancel')">취소</AppButton>
       <AppButton variant="solid" @click="$emit('confirm')">확인</AppButton>

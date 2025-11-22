@@ -1,26 +1,37 @@
 <template>
-  <div class="max-w-2xl mx-auto">
-    <h2 class="text-2xl font-semibold text-text-main mb-6 font-gowun">설문 보내기</h2>
+  <div class="SurveySendPage">
+    <h2 class="SurveySendTitle">설문 보내기</h2>
 
-    <div class="bg-white rounded-xl shadow-soft border border-gray-200 p-6">
-      <p class="text-text-sub mb-6 font-gowun">
+    <div class="SurveySendCard">
+      <p class="SurveySendDescription">
         사용자에게 건강 설문을 요청합니다. 전송 후 사용자가 설문을 완료하면 결과를 확인할 수 있습니다.
       </p>
 
-      <div class="space-y-4">
+      <div class="SurveySendForm">
         <div>
-          <label class="block text-sm font-semibold text-text-main mb-2 font-gowun">요청 메시지 (선택)</label>
+          <label class="SurveyMessageLabel">요청 메시지 (선택)</label>
           <textarea
             v-model="message"
-            class="w-full p-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="SurveyMessageInput"
             rows="4"
             placeholder="사용자에게 전달할 메시지를 입력하세요"
           />
         </div>
 
-        <div class="flex gap-3 justify-end pt-4">
-          <AppButton variant="ghost" @click="$router.back()">취소</AppButton>
-          <AppButton variant="solid" @click="sendSurvey" :disabled="sending">
+        <div class="SurveySendActions">
+          <AppButton
+            variant="ghost"
+            class="SurveySendCancelButton"
+            @click="$router.back()"
+          >
+            취소
+          </AppButton>
+          <AppButton
+            variant="solid"
+            class="SurveySendSubmitButton"
+            @click="sendSurvey"
+            :disabled="sending"
+          >
             {{ sending ? '전송 중...' : '설문 요청 전송' }}
           </AppButton>
         </div>

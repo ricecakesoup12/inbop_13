@@ -1,17 +1,17 @@
 <template>
-  <div class="min-h-screen bg-gradient-to-br from-beige to-white p-6">
-    <div class="max-w-4xl mx-auto">
-      <div class="bg-white rounded-2xl shadow-soft border border-gray-200 p-8">
-        <div class="mb-8">
-          <h1 class="text-3xl font-bold text-text-main font-gowun mb-2">내 설문 결과</h1>
+  <div class="UserSurveyResultPage">
+    <div class="UserSurveyResultContainer">
+      <div class="UserSurveyResultCard">
+        <div class="UserSurveyResultHeader">
+          <h1 class="UserSurveyResultTitle">내 설문 결과</h1>
           
           <!-- 날짜 선택 -->
-          <div v-if="allSurveys.length > 0" class="bg-primary/10 rounded-xl p-4 mt-4">
-            <label class="block text-sm font-semibold text-text-main mb-2 font-gowun">설문 날짜 선택</label>
+          <div v-if="allSurveys.length > 0" class="DateSelectionCard">
+            <label class="DateSelectionLabel">설문 날짜 선택</label>
             <select
               v-model="selectedSurveyId"
               @change="loadSelectedSurvey"
-              class="w-full px-4 py-3 border-2 border-primary rounded-xl focus:border-primary outline-none font-gowun bg-white"
+              class="DateSelectionSelect"
             >
               <option v-for="survey in allSurveys" :key="survey.id" :value="survey.id">
                 {{ formatDate(survey.createdAt) }}
@@ -20,54 +20,54 @@
           </div>
         </div>
 
-        <div v-if="loading" class="text-center py-12">
-          <p class="text-text-sub font-gowun">불러오는 중...</p>
+        <div v-if="loading" class="LoadingMessage">
+          <p>불러오는 중...</p>
         </div>
 
-        <div v-else-if="!currentSurvey" class="text-center py-12">
-          <p class="text-text-sub font-gowun">아직 제출한 설문이 없습니다.</p>
+        <div v-else-if="!currentSurvey" class="NoSurveyMessage">
+          <p>아직 제출한 설문이 없습니다.</p>
         </div>
 
-        <div v-else class="space-y-6">
+        <div v-else class="SurveyDetailsContainer">
           <!-- 1. 기본 정보 -->
           <AppCard>
-            <div class="bg-beige p-4 border-b border-accent">
-              <h3 class="font-semibold text-text-main font-gowun">1. 기본 정보</h3>
+            <div class="SectionHeader">
+              <h3 class="SectionTitle">1. 기본 정보</h3>
             </div>
-            <div class="p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">성별</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.gender?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('gender')" class="text-sm text-red-500 font-gowun">{{ getDiff('gender') }}</span>
+            <div class="SectionContent">
+              <div class="DataRow">
+                <span class="DataLabel">성별</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.gender?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('gender')" class="DataDiff">{{ getDiff('gender') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">나이</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.age }}세</span>
-                  <span v-if="getDiff('age')" class="text-sm text-red-500 font-gowun">{{ getDiff('age') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">나이</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.age }}세</span>
+                  <span v-if="getDiff('age')" class="DataDiff">{{ getDiff('age') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">키</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.height }}cm</span>
-                  <span v-if="getDiff('height')" class="text-sm text-red-500 font-gowun">{{ getDiff('height') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">키</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.height }}cm</span>
+                  <span v-if="getDiff('height')" class="DataDiff">{{ getDiff('height') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">몸무게</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.weight }}kg</span>
-                  <span v-if="getDiff('weight')" class="text-sm text-red-500 font-bold font-gowun">{{ getDiff('weight') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">몸무게</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.weight }}kg</span>
+                  <span v-if="getDiff('weight')" class="DataDiff">{{ getDiff('weight') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">생활 패턴</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.lifestyle?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('lifestyle')" class="text-sm text-red-500 font-gowun">{{ getDiff('lifestyle') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">생활 패턴</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.lifestyle?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('lifestyle')" class="DataDiff">{{ getDiff('lifestyle') }}</span>
                 </div>
               </div>
             </div>
@@ -75,42 +75,42 @@
 
           <!-- 2. 건강 상태 -->
           <AppCard>
-            <div class="bg-beige p-4 border-b border-accent">
-              <h3 class="font-semibold text-text-main font-gowun">2. 건강 상태</h3>
+            <div class="SectionHeader">
+              <h3 class="SectionTitle">2. 건강 상태</h3>
             </div>
-            <div class="p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">진단받은 질환</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">
+            <div class="SectionContent">
+              <div class="DataRow">
+                <span class="DataLabel">진단받은 질환</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">
                     {{ currentData.diseases?.join(', ') || '없음' }}
                     {{ currentData.diseaseOther ? ` (기타: ${currentData.diseaseOther})` : '' }}
                   </span>
-                  <span v-if="getDiff('diseases')" class="text-sm text-red-500 font-gowun">{{ getDiff('diseases') }}</span>
+                  <span v-if="getDiff('diseases')" class="DataDiff">{{ getDiff('diseases') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">최근 수술/부상</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.surgery?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('surgery')" class="text-sm text-red-500 font-gowun">{{ getDiff('surgery') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">최근 수술/부상</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.surgery?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('surgery')" class="DataDiff">{{ getDiff('surgery') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">복용 중인 약</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">
+              <div class="DataRow">
+                <span class="DataLabel">복용 중인 약</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">
                     {{ currentData.medication?.join(', ') || '-' }}
                     {{ currentData.medicationName ? ` (${currentData.medicationName})` : '' }}
                   </span>
-                  <span v-if="getDiff('medication')" class="text-sm text-red-500 font-gowun">{{ getDiff('medication') }}</span>
+                  <span v-if="getDiff('medication')" class="DataDiff">{{ getDiff('medication') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">평균 수면 시간</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.sleep?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('sleep')" class="text-sm text-red-500 font-gowun">{{ getDiff('sleep') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">평균 수면 시간</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.sleep?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('sleep')" class="DataDiff">{{ getDiff('sleep') }}</span>
                 </div>
               </div>
             </div>
@@ -118,29 +118,29 @@
 
           <!-- 3. 생활 습관 -->
           <AppCard>
-            <div class="bg-beige p-4 border-b border-accent">
-              <h3 class="font-semibold text-text-main font-gowun">3. 생활 습관</h3>
+            <div class="SectionHeader">
+              <h3 class="SectionTitle">3. 생활 습관</h3>
             </div>
-            <div class="p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">흡연 여부</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.smoking?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('smoking')" class="text-sm text-red-500 font-gowun">{{ getDiff('smoking') }}</span>
+            <div class="SectionContent">
+              <div class="DataRow">
+                <span class="DataLabel">흡연 여부</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.smoking?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('smoking')" class="DataDiff">{{ getDiff('smoking') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">음주 빈도</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.alcohol?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('alcohol')" class="text-sm text-red-500 font-gowun">{{ getDiff('alcohol') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">음주 빈도</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.alcohol?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('alcohol')" class="DataDiff">{{ getDiff('alcohol') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">식습관</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.diet?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('diet')" class="text-sm text-red-500 font-gowun">{{ getDiff('diet') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">식습관</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.diet?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('diet')" class="DataDiff">{{ getDiff('diet') }}</span>
                 </div>
               </div>
             </div>
@@ -148,42 +148,42 @@
 
           <!-- 4. 운동 경험 -->
           <AppCard>
-            <div class="bg-beige p-4 border-b border-accent">
-              <h3 class="font-semibold text-text-main font-gowun">4. 운동 경험 및 체력</h3>
+            <div class="SectionHeader">
+              <h3 class="SectionTitle">4. 운동 경험 및 체력</h3>
             </div>
-            <div class="p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">주간 운동 횟수</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.exerciseFrequency?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('exerciseFrequency')" class="text-sm text-red-500 font-gowun">{{ getDiff('exerciseFrequency') }}</span>
+            <div class="SectionContent">
+              <div class="DataRow">
+                <span class="DataLabel">주간 운동 횟수</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.exerciseFrequency?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('exerciseFrequency')" class="DataDiff">{{ getDiff('exerciseFrequency') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">선호 운동</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">
+              <div class="DataRow">
+                <span class="DataLabel">선호 운동</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">
                     {{ currentData.preferredExercise?.join(', ') || '-' }}
                     {{ currentData.preferredExerciseOther ? ` (기타: ${currentData.preferredExerciseOther})` : '' }}
                   </span>
-                  <span v-if="getDiff('preferredExercise')" class="text-sm text-red-500 font-gowun">{{ getDiff('preferredExercise') }}</span>
+                  <span v-if="getDiff('preferredExercise')" class="DataDiff">{{ getDiff('preferredExercise') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">운동 목표</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">
+              <div class="DataRow">
+                <span class="DataLabel">운동 목표</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">
                     {{ currentData.exerciseGoal?.join(', ') || '-' }}
                     {{ currentData.exerciseGoalOther ? ` (기타: ${currentData.exerciseGoalOther})` : '' }}
                   </span>
-                  <span v-if="getDiff('exerciseGoal')" class="text-sm text-red-500 font-gowun">{{ getDiff('exerciseGoal') }}</span>
+                  <span v-if="getDiff('exerciseGoal')" class="DataDiff">{{ getDiff('exerciseGoal') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">체력 수준</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.fitnessLevel || '-' }} / 5</span>
-                  <span v-if="getDiff('fitnessLevel')" class="text-sm text-red-500 font-bold font-gowun">{{ getDiff('fitnessLevel') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">체력 수준</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.fitnessLevel || '-' }} / 5</span>
+                  <span v-if="getDiff('fitnessLevel')" class="DataDiff">{{ getDiff('fitnessLevel') }}</span>
                 </div>
               </div>
             </div>
@@ -191,25 +191,25 @@
 
           <!-- 5. 신체 한계 -->
           <AppCard>
-            <div class="bg-beige p-4 border-b border-accent">
-              <h3 class="font-semibold text-text-main font-gowun">5. 신체적 한계 및 특이사항</h3>
+            <div class="SectionHeader">
+              <h3 class="SectionTitle">5. 신체적 한계 및 특이사항</h3>
             </div>
-            <div class="p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">통증 부위</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">
+            <div class="SectionContent">
+              <div class="DataRow">
+                <span class="DataLabel">통증 부위</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">
                     {{ currentData.painArea?.join(', ') || '없음' }}
                     {{ currentData.painAreaOther ? ` (기타: ${currentData.painAreaOther})` : '' }}
                   </span>
-                  <span v-if="getDiff('painArea')" class="text-sm text-red-500 font-gowun">{{ getDiff('painArea') }}</span>
+                  <span v-if="getDiff('painArea')" class="DataDiff">{{ getDiff('painArea') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">운동 제한 지시</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.exerciseRestriction?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('exerciseRestriction')" class="text-sm text-red-500 font-gowun">{{ getDiff('exerciseRestriction') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">운동 제한 지시</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.exerciseRestriction?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('exerciseRestriction')" class="DataDiff">{{ getDiff('exerciseRestriction') }}</span>
                 </div>
               </div>
             </div>
@@ -217,39 +217,39 @@
 
           <!-- 6. 심리/동기 -->
           <AppCard>
-            <div class="bg-beige p-4 border-b border-accent">
-              <h3 class="font-semibold text-text-main font-gowun">6. 심리/동기 요인</h3>
+            <div class="SectionHeader">
+              <h3 class="SectionTitle">6. 심리/동기 요인</h3>
             </div>
-            <div class="p-6 space-y-3">
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">운동 시작 이유</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">
+            <div class="SectionContent">
+              <div class="DataRow">
+                <span class="DataLabel">운동 시작 이유</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">
                     {{ currentData.exerciseReason?.join(', ') || '-' }}
                     {{ currentData.exerciseReasonOther ? ` (기타: ${currentData.exerciseReasonOther})` : '' }}
                   </span>
-                  <span v-if="getDiff('exerciseReason')" class="text-sm text-red-500 font-gowun">{{ getDiff('exerciseReason') }}</span>
+                  <span v-if="getDiff('exerciseReason')" class="DataDiff">{{ getDiff('exerciseReason') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">운동 자신감</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.exerciseConfidence?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('exerciseConfidence')" class="text-sm text-red-500 font-gowun">{{ getDiff('exerciseConfidence') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">운동 자신감</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.exerciseConfidence?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('exerciseConfidence')" class="DataDiff">{{ getDiff('exerciseConfidence') }}</span>
                 </div>
               </div>
-              <div class="flex justify-between items-center">
-                <span class="text-text-sub font-gowun">선호 환경</span>
-                <div class="flex items-center gap-2">
-                  <span class="font-semibold text-text-main font-gowun">{{ currentData.exerciseEnvironment?.join(', ') || '-' }}</span>
-                  <span v-if="getDiff('exerciseEnvironment')" class="text-sm text-red-500 font-gowun">{{ getDiff('exerciseEnvironment') }}</span>
+              <div class="DataRow">
+                <span class="DataLabel">선호 환경</span>
+                <div class="DataValueWrapper">
+                  <span class="DataValue">{{ currentData.exerciseEnvironment?.join(', ') || '-' }}</span>
+                  <span v-if="getDiff('exerciseEnvironment')" class="DataDiff">{{ getDiff('exerciseEnvironment') }}</span>
                 </div>
               </div>
             </div>
           </AppCard>
 
-          <div class="flex justify-center pt-4">
-            <AppButton @click="$router.push('/user')" class="px-8">
+          <div class="BackToDashboardButtonWrapper">
+            <AppButton @click="$router.push('/user')" class="BackToDashboardButton">
               대시보드로 돌아가기
             </AppButton>
           </div>
