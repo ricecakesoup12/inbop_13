@@ -1,8 +1,8 @@
 <template>
   <AppCard>
-    <div class="p-4">
-      <h3 class="font-semibold text-text-main mb-3 font-gowun">평균 심박수</h3>
-      <div class="h-48">
+    <div class="HeartRateTrendChartContent">
+      <h3 class="HeartRateTrendChartTitle">평균 심박수</h3>
+      <div class="HeartRateTrendChartContainer">
         <Line v-if="chartData" :data="chartData" :options="options" />
       </div>
     </div>

@@ -1,8 +1,8 @@
 <template>
-  <div class="space-y-4">
-    <div class="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
-      <h3 class="font-semibold text-text-main mb-4 flex items-center gap-2 font-gowun">
-        <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="LiveMapPage">
+    <div class="LiveMapCard">
+      <h3 class="LiveMapTitle">
+        <svg class="LiveMapIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
           <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
         </svg>
@@ -10,20 +10,20 @@
       </h3>
       
       <!-- 상태 표시 -->
-      <div class="mb-4 flex items-center gap-2">
-        <div :class="isTracking ? 'bg-green-500' : 'bg-gray-400'" class="w-3 h-3 rounded-full animate-pulse"></div>
-        <span class="text-sm text-text-sub font-gowun">
+      <div class="LiveMapStatus">
+        <div :class="isTracking ? 'LiveMapStatusDotActive' : 'LiveMapStatusDotInactive'" class="LiveMapStatusDot"></div>
+        <span class="LiveMapStatusText">
           {{ isTracking ? '위치 추적 중' : '위치 추적 대기 중' }}
         </span>
       </div>
 
       <!-- 지도 -->
-      <div id="map" class="w-full h-[60vh] rounded-xl border border-gray-200 shadow-sm"></div>
+      <div id="map" class="UserLiveLocationMap"></div>
 
       <!-- 현재 위치 정보 (항상 도로명 주소만 표시) -->
-      <div class="mt-4 p-3 bg-beige rounded-lg">
-        <div class="text-xs text-text-sub font-gowun">현재 위치</div>
-        <div class="text-sm text-text-main font-gowun mt-1">
+      <div class="CurrentLocationInfo">
+        <div class="CurrentLocationLabel">현재 위치</div>
+        <div class="CurrentLocationAddress">
           {{ currentAddress || '주소를 가져오는 중...' }}
         </div>
       </div>

@@ -1,8 +1,8 @@
 <template>
   <AppCard>
-    <div class="p-4">
-      <h3 class="font-semibold text-text-main mb-3 font-gowun">몸무게 변화</h3>
-      <div class="h-48">
+    <div class="WeightTrendChartContent">
+      <h3 class="WeightTrendChartTitle">몸무게 변화</h3>
+      <div class="WeightTrendChartContainer">
         <Line v-if="chartData" :data="chartData" :options="options" />
       </div>
     </div>

@@ -1,6 +1,6 @@
 <template>
   <div :class="wrapperClass">
-    <div ref="mapRef" class="w-full h-full rounded-xl border border-gray-200"></div>
+    <div ref="mapRef" class="UserLocationMapContainer"></div>
   </div>
 </template>
 
