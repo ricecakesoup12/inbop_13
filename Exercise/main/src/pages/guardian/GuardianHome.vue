@@ -1,17 +1,17 @@
 <template>
-  <section>
-    <div class="flex justify-between items-center mb-6">
-      <h2 class="text-2xl font-semibold text-text-main font-gowun">사용자 리스트</h2>
-      <div class="flex gap-3">
-        <AppButton variant="outline" @click="showLocationMap = true">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <section class="GuardianHomePage">
+    <div class="GuardianHomeHeader">
+      <h2 class="GuardianHomeTitle">사용자 리스트</h2>
+      <div class="GuardianHomeActions">
+        <AppButton variant="outline" @click="showLocationMap = true" class="ViewLocationMapButton">
+          <svg class="ViewLocationMapIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           실시간 위치 보기
         </AppButton>
-        <AppButton @click="showAddUser = true">
-          <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+        <AppButton @click="showAddUser = true" class="AddUserButton">
+          <svg class="AddUserIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
           </svg>
           사용자 추가
@@ -19,20 +19,20 @@
       </div>
     </div>
     
-    <div v-if="loading" class="text-center py-12">
-      <p class="text-text-sub font-gowun">불러오는 중...</p>
+    <div v-if="loading" class="GuardianHomeLoading">
+      <p>불러오는 중...</p>
     </div>
 
-    <div v-else-if="error" class="text-center py-12">
-      <p class="text-red-600 font-gowun">{{ error }}</p>
-      <AppButton @click="loadUsers" class="mt-4">다시 시도</AppButton>
+    <div v-else-if="error" class="GuardianHomeError">
+      <p>{{ error }}</p>
+      <AppButton @click="loadUsers" class="RetryButton">다시 시도</AppButton>
     </div>
 
-    <div v-else-if="users.length === 0" class="text-center py-12">
-      <p class="text-text-sub font-gowun">등록된 사용자가 없습니다.</p>
+    <div v-else-if="users.length === 0" class="GuardianHomeEmpty">
+      <p>등록된 사용자가 없습니다.</p>
     </div>
 
-    <div v-else class="space-y-4">
+    <div v-else class="GuardianHomeUserList">
       <UserListItem
         v-for="user in users"
         :key="user.id"
@@ -58,24 +58,24 @@
 
     <!-- 사용자 추가 모달 -->
     <AppModal :open="showAddUser" title="사용자 추가" @close="closeAddUser">
-      <form @submit.prevent="handleAddUser" class="space-y-4">
+      <form @submit.prevent="handleAddUser" class="AddUserForm">
         <!-- 사용자 사진 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
+        <div class="AddUserPhotoSection">
+          <label class="AddUserPhotoLabel">
             사용자 사진
           </label>
-          <div class="flex flex-col items-center gap-3">
+          <div class="AddUserPhotoContent">
             <!-- 사진 미리보기 -->
-            <div class="w-32 h-32 rounded-full border-4 border-gray-200 overflow-hidden bg-gray-100 flex items-center justify-center">
+            <div class="AddUserPhotoPreview">
               <img
                 v-if="newUser.faceUrl"
                 :src="newUser.faceUrl"
                 alt="프로필 미리보기"
-                class="w-full h-full object-cover"
+                class="AddUserPhotoPreviewImage"
               />
               <svg
                 v-else
-                class="w-12 h-12 text-gray-400"
+                class="AddUserPhotoPlaceholderIcon"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -90,17 +90,17 @@
               type="file"
               accept="image/*"
               @change="handleImageSelect"
-              class="hidden"
+              class="AddUserPhotoFileInput"
             />
             
             <!-- 파일 선택 버튼 -->
             <AppButton
               type="button"
               variant="outline"
-              class="px-4 py-2 text-sm"
+              class="SelectPhotoButton"
               @click="fileInputRef?.click()"
             >
-              <svg class="w-5 h-5 mr-2 inline" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="SelectPhotoIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
               </svg>
               {{ newUser.faceUrl ? '사진 변경' : '사진 선택' }}
@@ -111,7 +111,7 @@
               v-if="newUser.faceUrl"
               type="button"
               @click="newUser.faceUrl = ''"
-              class="text-xs text-red-500 hover:text-red-700 font-gowun"
+              class="DeletePhotoButton"
             >
               사진 삭제
             </button>
@@ -119,10 +119,10 @@
         </div>
 
         <!-- 사용자 코드 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
-            사용자 코드 <span class="text-red-500">*</span>
-            <span class="text-xs text-text-sub ml-2">(영문+숫자 4자리, 예: AB12)</span>
+        <div class="AddUserCodeField">
+          <label class="AddUserCodeLabel">
+            사용자 코드 <span class="AddUserRequired">*</span>
+            <span class="AddUserCodeHint">(영문+숫자 4자리, 예: AB12)</span>
           </label>
           <input
             v-model="newUser.userCode"
@@ -131,110 +131,110 @@
             maxlength="4"
             pattern="[A-Za-z0-9]{4}"
             placeholder="예: AB12"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun uppercase"
+            class="AddUserCodeInput"
             @input="newUser.userCode = newUser.userCode.toUpperCase()"
           />
-          <p v-if="codeError" class="text-xs text-red-500 mt-1 font-gowun">{{ codeError }}</p>
+          <p v-if="codeError" class="AddUserCodeError">{{ codeError }}</p>
         </div>
 
         <!-- 이름 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
-            이름 <span class="text-red-500">*</span>
+        <div class="AddUserNameField">
+          <label class="AddUserNameLabel">
+            이름 <span class="AddUserRequired">*</span>
           </label>
           <input
             v-model="newUser.name"
             type="text"
             required
             placeholder="이름을 입력하세요"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="AddUserNameInput"
           />
         </div>
 
         <!-- 성별 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
-            성별 <span class="text-red-500">*</span>
+        <div class="AddUserGenderField">
+          <label class="AddUserGenderLabel">
+            성별 <span class="AddUserRequired">*</span>
           </label>
-          <div class="grid grid-cols-3 gap-3">
+          <div class="AddUserGenderOptions">
             <label
               v-for="g in ['남성', '여성', '기타']"
               :key="g"
               :class="[
-                'flex items-center justify-center p-3 border-2 rounded-xl cursor-pointer transition-all font-gowun',
+                'AddUserGenderOption',
                 newUser.gender === g
-                  ? 'bg-primary/10 border-primary text-primary font-semibold'
-                  : 'border-gray-200 hover:border-gray-300'
+                  ? 'AddUserGenderOptionActive'
+                  : 'AddUserGenderOptionInactive'
               ]"
             >
-              <input type="radio" :value="g" v-model="newUser.gender" class="hidden" required />
+              <input type="radio" :value="g" v-model="newUser.gender" class="AddUserGenderRadio" required />
               <span>{{ g }}</span>
             </label>
           </div>
         </div>
 
         <!-- 나이 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
-            나이 <span class="text-red-500">*</span>
+        <div class="AddUserAgeField">
+          <label class="AddUserAgeLabel">
+            나이 <span class="AddUserRequired">*</span>
           </label>
           <input
             v-model.number="newUser.age"
             type="number"
             required
             placeholder="나이"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="AddUserAgeInput"
           />
         </div>
 
         <!-- 키 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
-            키 (cm) <span class="text-red-500">*</span>
+        <div class="AddUserHeightField">
+          <label class="AddUserHeightLabel">
+            키 (cm) <span class="AddUserRequired">*</span>
           </label>
           <input
             v-model.number="newUser.height"
             type="number"
             required
             placeholder="키"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="AddUserHeightInput"
           />
         </div>
 
         <!-- 몸무게 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
+        <div class="AddUserWeightField">
+          <label class="AddUserWeightLabel">
             몸무게 (kg)
           </label>
           <input
             v-model.number="newUser.weight"
             type="number"
             placeholder="몸무게"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="AddUserWeightInput"
           />
         </div>
 
         <!-- 보호자 연락처 -->
-        <div>
-          <label class="block font-semibold mb-2 font-gowun">
+        <div class="AddUserGuardianPhoneField">
+          <label class="AddUserGuardianPhoneLabel">
             보호자 연락처
-            <span class="text-xs text-text-sub ml-2">(긴급 연락용)</span>
+            <span class="AddUserGuardianPhoneHint">(긴급 연락용)</span>
           </label>
           <input
             v-model="newUser.guardianPhone"
             type="tel"
             placeholder="010-1234-5678"
             pattern="[0-9]{2,3}-[0-9]{3,4}-[0-9]{4}"
-            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:border-primary outline-none font-gowun"
+            class="AddUserGuardianPhoneInput"
           />
-          <p class="text-xs text-gray-500 mt-1 font-gowun">예: 010-1234-5678</p>
+          <p class="AddUserGuardianPhoneExample">예: 010-1234-5678</p>
         </div>
 
-        <div class="flex gap-3 pt-4">
-          <AppButton type="button" variant="ghost" @click="closeAddUser" class="flex-1">
+        <div class="AddUserActions">
+          <AppButton type="button" variant="ghost" @click="closeAddUser" class="AddUserCancelButton">
             취소
           </AppButton>
-          <AppButton type="submit" :disabled="addLoading" class="flex-1">
+          <AppButton type="submit" :disabled="addLoading" class="AddUserSubmitButton">
             {{ addLoading ? '등록 중...' : '등록하기' }}
           </AppButton>
         </div>

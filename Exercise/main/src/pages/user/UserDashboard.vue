@@ -1,30 +1,30 @@
 <template>
-  <div class="space-y-4">
+  <div class="UserDashboardPage">
     <!-- 상단 절반 화이트 박스 -->
-    <div class="bg-white rounded-2xl shadow-soft h-[50vh] border border-gray-200 relative">
-      <div class="h-full flex items-center justify-between py-6 px-6 gap-6">
+    <div class="UserDashboardHeaderCard">
+      <div class="UserDashboardHeaderContent">
       <!-- 좌측: 아바타 이미지 -->
-      <div class="flex flex-col items-center justify-center w-1/2 relative">
+      <div class="UserAvatarSection">
         <!-- 오른쪽 상단 버튼들 -->
-        <div class="absolute top-0 right-0 flex flex-col gap-2 z-20">
-          <!-- 새싹 버튼 -->
+        <div class="UserQuickActions">
+          <!-- 새싹 버튼 (보유 새싹 표시) -->
           <button
-            class="bg-green-200 hover:bg-green-300 text-green-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110 relative"
+            class="SproutCountButton"
             title="보유 새싹"
             disabled
           >
             <div class="text-2xl mb-0.5">🌱</div>
-            <div class="text-xs font-bold">{{ sproutCount }}</div>
+            <div class="SproutCountText">{{ sproutCount }}</div>
           </button>
           
           <!-- 상점 버튼 -->
           <a>
             <button
               @click="showShopPopup = true"
-              class="bg-pink-200 hover:bg-pink-300 text-pink-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110"
+              class="OpenShopButton"
               title="상점 열기"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="OpenShopButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 11V7a4 4 0 00-8 0v4M5 9h14l1 12H4L5 9z" />
               </svg>
             </button>
@@ -33,10 +33,10 @@
           <!-- 119 신고 버튼 -->
           <a href="tel:119">
             <button
-              class="bg-red-200 hover:bg-red-300 text-red-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110"
+              class="EmergencyCallButton"
               title="119 신고"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="EmergencyCallButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
               </svg>
             </button>
@@ -45,10 +45,10 @@
           <!-- 보호자 연락 버튼 -->
           <a v-if="currentUser?.guardianPhone" :href="`tel:${currentUser.guardianPhone}`">
             <button
-              class="bg-green-200 hover:bg-green-300 text-green-700 rounded-full p-3 transition-all duration-300 transform hover:scale-110"
+              class="ContactGuardianButton"
               title="보호자 연락"
             >
-              <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg class="ContactGuardianButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z" />
               </svg>
             </button>
@@ -56,47 +56,46 @@
         </div>
         
         <!-- 이미지가 있으면 표시, 없으면 플레이스홀더 -->
-        <div v-if="currentAvatarSrc" class="relative">
+        <div v-if="currentAvatarSrc" class="UserAvatarImageWrapper">
           <img 
             :src="currentAvatarSrc" 
             alt="User Avatar" 
-            class="w-36 h-36 object-contain"
             style="image-rendering: pixelated;"
             @error="handleImageError"
           />
         </div>
         <!-- 이미지 로드 실패 시 플레이스홀더 -->
-        <div v-else class="w-36 h-36 bg-gray-200 rounded-lg flex items-center justify-center">
-          <span class="text-6xl">👤</span>
+        <div v-else class="UserAvatarPlaceholder">
+          <span>👤</span>
         </div>
-        <div class="text-center text-sm text-gray-600 mt-1 font-gowun bg-white/80 px-3 py-1 rounded-lg">
+        <div class="UserAvatarStatus">
           {{ avatarStatus }} (레벨 {{ avatarLevel }})
         </div>
-        <div class="text-center text-xs text-gray-500 mt-1 font-gowun">
+        <div class="UserActivityGoal">
           목표: {{ dailyGoal }}분 | 진행: {{ todayProgress }}분
         </div>
       </div>
       
       <!-- 우측: 목표치 표시 -->
-      <div class="w-1/2 relative flex flex-col justify-center">
+      <div class="UserDailyGoalSection">
         <!-- 목표치 표시 (처방 수락 후에만) -->
-        <div v-if="hasActivePrescription" class="px-6 py-4">
-          <div class="text-center mb-4">
-            <div class="text-lg font-bold text-gray-800 mb-4 font-gowun">오늘의 운동 목표</div>
+        <div v-if="hasActivePrescription" class="UserDailyGoalContent">
+          <div class="UserDailyGoalContentInner">
+            <div class="DailyExerciseTitle">오늘의 운동 목표</div>
             
             <!-- 모든 운동 완료 시 -->
-            <div v-if="isAllExercisesCompleted" class="space-y-4">
-              <div class="text-6xl mb-4">🌱</div>
-              <div class="text-2xl font-bold text-primary font-gowun">오늘의 운동 완료!</div>
+            <div v-if="isAllExercisesCompleted" class="DailyExerciseCompleted">
+              <div>🌱</div>
+              <div>오늘의 운동 완료!</div>
             </div>
 
             <!-- 운동 버튼들 -->
-            <div v-else-if="activePrescription" class="space-y-3 text-sm font-gowun">
+            <div v-else-if="activePrescription" class="DailyExerciseActions">
               <!-- 시작 스트레칭 버튼 -->
               <button 
                 v-if="!exerciseCompleted.startStretching"
                 @click="completeStartStretching"
-                class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+                class="StartStretchingButton"
               >
                 시작 스트레칭 {{ activePrescription.startStretchingMinutes }}분
               </button>
@@ -105,7 +104,7 @@
               <button 
                 v-if="hasIncompleteIntervals"
                 @click="completeNextInterval"
-                class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+                class="IntervalWorkoutButton"
               >
                 인터벌 운동: 걷기 {{ activePrescription.walkingMinutes }}분 → 뛰기 {{ activePrescription.runningMinutes }}분
                 ({{ completedIntervalCount }}/{{ activePrescription.sets }}세트 완료)
@@ -115,7 +114,7 @@
               <button 
                 v-if="!exerciseCompleted.endStretching"
                 @click="completeEndStretching"
-                class="w-full bg-primary hover:bg-primary-hover text-white rounded-lg py-3 px-4 transition-colors font-gowun"
+                class="EndStretchingButton"
               >
                 마무리 스트레칭 {{ activePrescription.endStretchingMinutes }}분
               </button>
@@ -127,51 +126,60 @@
     </div>
 
     <!-- 하단 3분할 -->
-    <div class="grid md:grid-cols-3 gap-4">
+    <div class="UserDashboardMainGrid">
       <!-- 좌측: 실시간 바이탈 + 설문 결과 보기 -->
-      <AppCard>
-        <div class="p-4">
-          <h3 class="font-semibold text-text-main mb-4 flex items-center gap-2 font-gowun">
-            <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+      <AppCard class="RealtimeVitalsCard">
+        <div class="RealtimeVitalsContent">
+          <h3 class="RealtimeVitalsTitle">
+            <svg class="RealtimeVitalsIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" />
             </svg>
             실시간 바이탈
           </h3>
-          <div class="space-y-3 mb-4">
-            <div class="flex justify-between items-center">
-              <span class="text-sm text-text-sub font-gowun">심박수</span>
-              <span class="text-2xl font-bold font-gowun" :class="(vital.hr && vital.hr > 0) ? 'text-primary' : 'text-gray-400'">
+          <div class="RealtimeVitalsMetrics">
+            <div class="RealtimeHeartRateRow">
+              <span class="RealtimeHeartRateLabel">심박수</span>
+              <span
+                class="RealtimeHeartRateValue"
+                :class="(vital.hr && vital.hr > 0) ? 'RealtimeHeartRateValueActive' : 'RealtimeHeartRateValueInactive'"
+              >
                 {{ (vital.hr && vital.hr > 0) ? vital.hr : '-' }}
               </span>
-              <span class="text-xs text-text-sub font-gowun">bpm</span>
+              <span class="RealtimeHeartRateUnit">bpm</span>
             </div>
           </div>
-          <div v-if="!vital.hr || vital.hr === 0" class="mb-2 text-center">
-            <p class="text-xs text-gray-400 font-gowun">센서 연결 대기 중...</p>
+          <div v-if="!vital.hr || vital.hr === 0" class="SensorWaitingMessage">
+            <p>센서 연결 대기 중...</p>
           </div>
-          <div class="space-y-2">
-            <AppButton @click="reconnectBluetooth" variant="solid" class="w-full">블루투스 재연결</AppButton>
+          <div class="RealtimeVitalsActions">
+            <AppButton
+              @click="reconnectBluetooth"
+              variant="solid"
+              class="ReconnectBluetoothButton"
+            >
+              블루투스 재연결
+            </AppButton>
             <RouterLink to="/user/survey/result">
-              <AppButton variant="ghost" class="w-full">설문 결과 보기</AppButton>
+              <AppButton variant="ghost" class="ViewSurveyResultButton">설문 결과 보기</AppButton>
             </RouterLink>
             
             <!-- 새로운 설문 요청 알림 -->
-            <div v-if="pendingSurveyRequests.length > 0" class="space-y-2">
+            <div v-if="pendingSurveyRequests.length > 0" class="PendingSurveyRequests">
               <div
                 v-for="surveyRequest in pendingSurveyRequests"
                 :key="surveyRequest.id"
-                class="relative"
+                class="PendingSurveyRequestItem"
               >
                 <AppButton
                   @click="goToSurvey(surveyRequest.id)"
-                  class="w-full bg-red-500 hover:bg-red-600 text-white animate-pulse"
+                  class="NewSurveyRequestButton"
                 >
-                  <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <svg class="NewSurveyRequestButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9" />
                   </svg>
                   새로운 설문 요청
                 </AppButton>
-                <span class="absolute -top-1 -right-1 w-3 h-3 bg-red-500 rounded-full animate-ping"></span>
+                <span class="PendingSurveyRequestBadge"></span>
               </div>
             </div>
           </div>
@@ -179,38 +187,41 @@
       </AppCard>
 
       <!-- 가운데: 운동 시작 + 칼로리/시간 + 위치 -->
-      <AppCard>
-        <div class="p-4">
-          <h3 class="font-semibold text-text-main mb-4 font-gowun">운동</h3>
+      <AppCard class="ExerciseCard">
+        <div class="ExerciseContent">
+          <h3 class="ExerciseSectionTitle">운동</h3>
           <AppButton
             @click="toggleWorkout"
             :variant="isExercising ? 'outline' : 'solid'"
-            class="w-full mb-4"
+            class="WorkoutToggleButton"
           >
             {{ isExercising ? '운동 중지' : '운동 시작' }}
           </AppButton>
-          <div class="grid grid-cols-2 gap-3 mb-4 text-sm">
-            <div class="text-center p-3 bg-beige rounded-lg">
-              <div class="text-text-sub font-gowun">칼로리</div>
-              <div class="text-xl font-bold text-text-main font-gowun">{{ caloriesBurned }}</div>
-              <div class="text-xs text-text-sub font-gowun">kcal</div>
+          <div class="ExerciseStatsGrid">
+            <div class="ExerciseCaloriesCard">
+              <div class="ExerciseCaloriesLabel">킬로칼로리</div>
+              <div class="ExerciseCaloriesValue">{{ caloriesBurned }}</div>
+              <div class="ExerciseCaloriesUnit">kcal</div>
             </div>
-            <div class="text-center p-3 bg-beige rounded-lg">
-              <div class="text-text-sub font-gowun">시간</div>
-              <div class="text-xl font-bold text-text-main font-gowun">{{ exerciseTimeFormatted }}</div>
+            <div class="ExerciseTimeCard">
+              <div class="ExerciseTimeLabel">시간</div>
+              <div class="ExerciseTimeValue">{{ exerciseTimeFormatted }}</div>
             </div>
           </div>
-          <div class="space-y-2">
-            <div class="text-center">
+          <div class="ExerciseLocationSection">
+            <div class="CurrentLocationMap">
               <NaverUserLocationMap :position="position" small :userName="currentUser?.name" />
             </div>
             <!-- 현재 주소 표시 -->
-            <div v-if="currentAddress" class="text-xs text-gray-600 font-gowun text-center px-2 py-1 bg-gray-50 rounded">
+            <div
+              v-if="currentAddress"
+              class="CurrentAddressDisplay"
+            >
               📍 {{ currentAddress }}
             </div>
             <RouterLink to="/user/location">
-              <AppButton variant="ghost" class="w-full">
-                <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <AppButton variant="ghost" class="ViewLiveLocationButton">
+                <svg class="ViewLiveLocationButtonIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
                   <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
                 </svg>
@@ -222,25 +233,34 @@
       </AppCard>
 
       <!-- 우측: 대화창 -->
-      <AppCard>
-        <div class="p-4">
-          <h3 class="font-semibold text-text-main mb-4 font-gowun">대화창</h3>
-          <div class="h-48 border rounded-lg p-3 overflow-auto bg-gray-50 mb-3 space-y-2">
-            <div v-for="(chatMessage, index) in chatMessages" :key="index" class="text-sm">
-              <span :class="chatMessage.sender === 'user' ? 'text-primary font-semibold' : 'text-green-600 font-semibold'" class="font-gowun">
+      <AppCard class="UserChatCard">
+        <div class="UserChatContent">
+          <h3 class="ChatSectionTitle">대화창</h3>
+          <div class="ChatMessageList">
+            <div v-for="(chatMessage, index) in chatMessages" :key="index" class="ChatMessageRow">
+              <span
+                :class="chatMessage.sender === 'user' ? 'ChatMessageSenderUser' : 'ChatMessageSenderBot'"
+                class="ChatMessageSender"
+              >
                 {{ chatMessage.sender === 'user' ? currentUser?.name || '나' : '운동 선생님' }}:
               </span>
-              <span class="text-text-sub ml-1 font-gowun">{{ chatMessage.message }}</span>
+              <span class="ChatMessageText">{{ chatMessage.message }}</span>
             </div>
           </div>
-          <div class="flex gap-2">
+          <div class="ChatInputRow">
             <input
               v-model="chatInput"
               @keyup.enter="sendChatMessage"
-              class="flex-1 border-2 border-gray-200 rounded-lg px-3 py-2 text-sm focus:border-primary outline-none font-gowun"
+              class="ChatInputField"
               placeholder="메시지 입력"
             />
-            <AppButton @click="sendChatMessage" variant="solid" class="px-4">전송</AppButton>
+            <AppButton
+              @click="sendChatMessage"
+              variant="solid"
+              class="ChatSendButton"
+            >
+              전송
+            </AppButton>
           </div>
         </div>
       </AppCard>
@@ -248,14 +268,14 @@
 
     <!-- 처방 알람 팝업 -->
     <AppModal :open="showPrescriptionPopup" title="새로운 운동 처방" @close="closePrescriptionPopup">
-      <div class="space-y-4">
-        <p class="text-text-sub mb-4 font-gowun">운동 선생님으로부터 새로운 운동 처방이 도착했습니다.</p>
-        <div v-if="pendingPrescription" class="bg-green-50 rounded-lg p-4 space-y-2 font-gowun">
-          <div class="text-sm"><span class="font-semibold">시작 스트레칭:</span> {{ pendingPrescription.startStretchingMinutes }}분</div>
-          <div class="text-sm"><span class="font-semibold">인터벌 운동:</span> 걷기 {{ pendingPrescription.walkingMinutes }}분 → 뛰기 {{ pendingPrescription.runningMinutes }}분 ({{ pendingPrescription.sets }}세트)</div>
-          <div class="text-sm"><span class="font-semibold">마무리 스트레칭:</span> {{ pendingPrescription.endStretchingMinutes }}분</div>
+      <div class="PrescriptionPopupContent">
+        <p class="PrescriptionPopupMessage">운동 선생님으로부터 새로운 운동 처방이 도착했습니다.</p>
+        <div v-if="pendingPrescription" class="PrescriptionDetails">
+          <div class="PrescriptionDetailItem"><span class="PrescriptionDetailLabel">시작 스트레칭:</span> {{ pendingPrescription.startStretchingMinutes }}분</div>
+          <div class="PrescriptionDetailItem"><span class="PrescriptionDetailLabel">인터벌 운동:</span> 걷기 {{ pendingPrescription.walkingMinutes }}분 → 뛰기 {{ pendingPrescription.runningMinutes }}분 ({{ pendingPrescription.sets }}세트)</div>
+          <div class="PrescriptionDetailItem"><span class="PrescriptionDetailLabel">마무리 스트레칭:</span> {{ pendingPrescription.endStretchingMinutes }}분</div>
         </div>
-        <p class="text-text-sub font-gowun">처방을 수락하시겠습니까?</p>
+        <p class="PrescriptionPopupQuestion">처방을 수락하시겠습니까?</p>
       </div>
       <template #footer>
         <AppButton variant="ghost" @click="declinePrescriptionHandler">거부</AppButton>
@@ -265,42 +285,46 @@
 
     <!-- 설문 팝업 -->
     <AppModal :open="showSurveyPopup" title="새로운 설문 요청" @close="closeSurveyPopup">
-      <p class="text-text-sub mb-4 font-gowun">보호자로부터 새로운 설문 요청이 있습니다.</p>
-      <p class="text-text-sub mb-6 font-gowun">설문을 진행하시겠습니까?</p>
+      <p class="SurveyPopupMessage1">보호자로부터 새로운 설문 요청이 있습니다.</p>
+      <p class="SurveyPopupMessage2">설문을 진행하시겠습니까?</p>
       <template #footer>
-        <AppButton variant="ghost" @click="declineSurvey">나중에</AppButton>
-        <AppButton variant="solid" @click="acceptSurvey">설문 시작</AppButton>
+        <AppButton variant="ghost" class="SurveyRemindLaterButton" @click="declineSurvey">
+          나중에
+        </AppButton>
+        <AppButton variant="solid" class="SurveyStartButton" @click="acceptSurvey">
+          설문 시작
+        </AppButton>
       </template>
     </AppModal>
 
     <!-- 상점 팝업 -->
     <AppModal :open="showShopPopup" title="상점" @close="closeShopPopup">
-      <div class="space-y-4">
+      <div class="ShopPopupContent">
         <!-- 건강 상점 -->
-        <div class="bg-lime-50 rounded-lg p-4 border-2 border-lime-200">
-          <div class="text-sm text-lime-600 font-gowun mb-2 font-semibold">건강 상점</div>
-          <div class="grid grid-cols-4 gap-3">
+        <div class="ShopSection">
+          <div class="ShopSectionTitle">건강 상점</div>
+          <div class="ShopItemsGrid">
             <div 
               v-for="item in shopItems.slice(0, 4)" 
               :key="item.id"
               @click="buyItem(item)"
               :class="[
-                'bg-white rounded-lg p-3 shadow-md hover:shadow-lg transition-shadow cursor-pointer border-2',
+                'ShopItem',
                 sproutCount >= item.price 
-                  ? 'border-transparent hover:border-lime-300' 
-                  : 'border-gray-300 opacity-50 cursor-not-allowed'
+                  ? 'ShopItemAvailable' 
+                  : 'ShopItemUnavailable'
               ]"
             >
-              <div class="mb-1 text-center">
+              <div class="ShopItemImageWrapper">
                 <img 
                   :src="item.image" 
                   :alt="item.name"
-                  class="w-16 h-16 object-contain mx-auto"
+                  class="ShopItemImage"
                 />
               </div>
-              <div class="text-xs text-center text-gray-700 font-gowun font-semibold">{{ item.name }}</div>
-              <div class="text-xs text-center text-lime-600 font-gowun mt-1">🌱 {{ item.price }}</div>
-              <div v-if="sproutCount < item.price" class="text-xs text-center text-red-500 font-gowun mt-1">새싹 부족</div>
+              <div class="ShopItemName">{{ item.name }}</div>
+              <div class="ShopItemPrice">🌱 {{ item.price }}</div>
+              <div v-if="sproutCount < item.price" class="ShopItemInsufficient">새싹 부족</div>
             </div>
           </div>
         </div>

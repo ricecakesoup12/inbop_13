@@ -1,7 +1,7 @@
 <template>
-  <div class="bg-white rounded-xl shadow-soft border border-gray-200 overflow-hidden">
+  <div class="AppCard">
     <slot />
-    <div v-if="$slots.footer" class="border-t border-gray-200 bg-beige p-4">
+    <div v-if="$slots.footer" class="AppCardFooter">
       <slot name="footer" />
     </div>
   </div>

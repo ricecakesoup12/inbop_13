@@ -1,35 +1,38 @@
 <template>
-  <div class="space-y-4">
-    <div class="bg-white rounded-2xl shadow-soft border border-gray-200 p-6">
-      <div class="flex justify-between items-center mb-4">
-        <h3 class="font-semibold text-text-main flex items-center gap-2 font-gowun">
-          <svg class="w-5 h-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+  <div class="GuardianAllUsersMapPage">
+    <div class="GuardianAllUsersMapCard">
+      <div class="GuardianAllUsersMapHeader">
+        <h3 class="GuardianAllUsersMapTitle">
+          <svg class="GuardianAllUsersMapIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
           전체 사용자 실시간 위치
         </h3>
-        <div class="flex items-center gap-2">
-          <div :class="isTracking ? 'bg-green-500' : 'bg-gray-400'" class="w-3 h-3 rounded-full animate-pulse"></div>
-          <span class="text-sm text-text-sub font-gowun">
+        <div class="GuardianAllUsersMapStatus">
+          <div
+            :class="isTracking ? 'GuardianAllUsersMapStatusDotActive' : 'GuardianAllUsersMapStatusDotInactive'"
+            class="GuardianAllUsersMapStatusDot"
+          ></div>
+          <span class="GuardianAllUsersMapStatusText">
             {{ usersCount }}명 추적 중
           </span>
         </div>
       </div>
       
       <!-- 지도 -->
-      <div id="guardian-map" class="w-full h-[60vh] rounded-xl border border-gray-200 shadow-sm"></div>
+      <div id="guardian-map" class="GuardianAllUsersMap"></div>
       
       <!-- 사용자 목록 -->
-      <div v-if="trackedUsers.length > 0" class="mt-4 p-3 bg-beige rounded-lg">
-        <div class="text-xs text-text-sub font-gowun mb-2">추적 중인 사용자</div>
-        <div class="flex flex-wrap gap-2">
+      <div v-if="trackedUsers.length > 0" class="GuardianTrackedUsers">
+        <div class="GuardianTrackedUsersTitle">추적 중인 사용자</div>
+        <div class="GuardianTrackedUsersList">
           <div
             v-for="user in trackedUsers"
             :key="user.userId"
-            class="flex items-center gap-1 px-2 py-1 bg-white rounded-lg text-xs font-gowun"
+            class="GuardianTrackedUserChip"
           >
-            <span class="w-2 h-2 bg-green-500 rounded-full"></span>
+            <span class="GuardianTrackedUserChipDot"></span>
             <span>{{ user.userName || user.userId }}</span>
           </div>
         </div>
