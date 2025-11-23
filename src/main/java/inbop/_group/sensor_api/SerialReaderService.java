@@ -33,6 +33,9 @@ import reactor.core.publisher.Sinks;
 public class SerialReaderService {
     private static final Logger log = LoggerFactory.getLogger(SerialReaderService.class);
 
+    private volatile boolean debugMode = false;
+    private volatile int debugHr = 80;
+
     @Value("${serial.port:COM4}")
     private String portName;
 
@@ -73,14 +76,8 @@ public class SerialReaderService {
     @PostConstruct
     public void init() {
         System.out.println("BTSerialReader init...");
-        openPortOnce(); // 한 번만 시도
-        /*
-        while (!running) {
-            openPortOnce();
-        }
-         */
+        openPortOnce();     // 기존 블루투스 포트 오픈
     }
-
     /**
      * 연결 상태 외부에서 확인 가능
      */
@@ -95,7 +92,9 @@ public class SerialReaderService {
     /**
      * 블루투스 포트 1회 오픈 시도
      */
+
     private void openPortOnce() {
+        System.out.println("SerialReaderService openPortOnce...");
         port = SerialPort.getCommPort(btPortName);
         port.setBaudRate(baudRate);
         port.setNumDataBits(8);
@@ -261,6 +260,7 @@ public class SerialReaderService {
 
     public Map<String, Object> getConnectionStatus() {
         Map<String, Object> status = new HashMap<>();
+        status.put("debugMode", debugMode); // 디버그 모드
         status.put("connected", port != null && port.isOpen());
         status.put("portName", portName);
         status.put("baud", baudRate);
@@ -280,4 +280,118 @@ public class SerialReaderService {
             log.info("Serial disconnected: {}", portName);
         }
     }
+
+    // 블루투스 재연결 시도
+    public synchronized void reconnect() {
+        System.out.println("[BT] reconnect() called");
+
+        if (debugMode) {
+            System.out.println("[BT] DEBUG MODE");
+            running = false;
+            startDebugLoop();
+            return;
+        }
+
+        // 1) 기존 readLoop 중지 플래그
+        running = false;
+
+        // 2) 포트가 열려 있으면 닫기
+        if (port != null && port.isOpen()) {
+            try {
+                System.out.println("[BT] Closing existing port: " + btPortName);
+                port.closePort();
+            } catch (Exception e) {
+                System.out.println("[BT] Error while closing port: " + e.getMessage());
+            }
+        }
+
+        // 3) 다시 열기
+        openPortOnce();
+    }
+
+
+
+    // 블루투스 디버그 모드 시작 (프론트에서 hr 받아서 설정)
+    public synchronized void startDebugMode(Integer hrFromRequest) {
+        System.out.println("[DEBUG] startDebugMode called, hr = " + hrFromRequest);
+
+        // 1) 실제 포트 읽기 중단
+        running = false;
+
+        if (port != null && port.isOpen()) {
+            try {
+                System.out.println("[DEBUG] Closing real port: " + btPortName);
+                port.closePort();
+            } catch (Exception e) {
+                System.out.println("[DEBUG] Error while closing port: " + e.getMessage());
+            }
+        }
+
+        // 2) 디버그 플래그 및 HR 설정
+        debugMode = true;
+        if (hrFromRequest != null && hrFromRequest > 0) {
+            debugHr = hrFromRequest;
+        } else {
+            debugHr = 80; // 기본값
+        }
+
+        // 3) 디버그용 페이크 데이터 루프 시작
+        startDebugLoop();
+    }
+
+    private String createFakeSensorJson(int fakeHr) throws Exception {
+        Map<String, Object> data = new HashMap<>();
+
+        data.put("ts", System.currentTimeMillis());     // millis() 대신 서버 시간
+        data.put("raw", 500);                           // 임의 값
+        data.put("sensor_avr", 505);                    // 임의 값
+        data.put("bpm", fakeHr);                        // 프론트가 요청한 fake HR
+        data.put("beat", "false");                   // true/false
+        data.put("thr", 550);                           // 일반 threshold 값
+
+        return objectMapper.writeValueAsString(data);
+    }
+
+    private void startDebugLoop() {
+        // 디버그용 루프 시작
+        running = true;
+
+        executor.submit(() -> {
+            System.out.println("[DEBUG] Fake sensor loop started. hr=" + debugHr);
+
+            while (running && debugMode) {
+                try {
+                    int hr = debugHr; // 매 반복마다 최신 값 사용 (원하면 나중에 값 변경 가능)
+                    String rawJson = createFakeSensorJson(debugHr);
+                    Map<String, Object> sensorData =
+                            objectMapper.readValue(rawJson, Map.class);
+
+                    log.info("[DEBUG] Fake sensor data: {}", rawJson);
+
+                    // 최근 데이터 업데이트
+                    lastSensorData.set(sensorData);
+                    sink.tryEmitNext(rawJson);
+
+                    // DB 저장 (실제와 동일하게 처리)
+                    saveToDatabase(hr);
+
+                    Thread.sleep(100);
+                } catch (Exception e) {
+                    log.error("[DEBUG] Fake sensor loop error", e);
+                }
+            }
+
+            System.out.println("[DEBUG] Fake sensor loop stopped.");
+        });
+    }
+    public synchronized void stopDebugMode() {
+        System.out.println("[DEBUG] stopDebugMode called");
+
+        debugMode = false;
+        running = false;
+
+        // 포트를 닫을 필요는 없지만, 디버그 루프가 돌고 있었다면 자동 종료됨
+        System.out.println("[DEBUG] 디버그 모드 종료.");
+    }
+
 }

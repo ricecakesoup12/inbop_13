@@ -3,13 +3,14 @@ package inbop._group.sensor_api;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import reactor.core.publisher.Flux;
 
 import java.util.Map;
 
 @RestController
-@RequestMapping("/api/serial")
+@RequestMapping("/api")
 @CrossOrigin(origins = {"http://localhost:5173", "http://localhost:5174", "http://localhost:5175",
     "http://127.0.0.1:5173", "http://127.0.0.1:5174", "http://127.0.0.1:5175"})
 public class SerialController {
@@ -24,7 +25,7 @@ public class SerialController {
     }
 
     // 최근 1건
-    @GetMapping("/latest")
+    @GetMapping("/serial/latest")
     public Map<String, Object> latest() {
         return service.getLastSensorData();
     }
@@ -36,9 +37,41 @@ public class SerialController {
     }
 
     // 센서 연결 상태 확인
-    @GetMapping("/status")
+    @GetMapping("/serial/status")
     public Map<String, Object> status() {
         return service.getConnectionStatus();
+    }
+
+    // 블루투스 재연결 시도
+    @PostMapping("/bluetooth/reconnect")
+    public ResponseEntity<?> reconnect(@RequestBody ReconnectRequest request) {
+        System.out.println("재연결 요청 유저 ID: " + request.getUserId());
+        return ResponseEntity.ok("Reconnecting...");
+    }
+
+    @GetMapping("/serial/debug")
+    public ResponseEntity<?> startDebug(
+            @RequestParam Long userId,
+            @RequestParam Integer hr
+    ) {
+        service.startDebugMode(hr);
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "userId", userId,
+                "hr", hr
+        ));
+    }
+
+    @GetMapping("/serial/debug/stop")
+    public ResponseEntity<?> stopDebug() {
+
+        service.stopDebugMode();
+
+        return ResponseEntity.ok(Map.of(
+                "success", true,
+                "message", "디버그 모드가 종료되었습니다."
+        ));
     }
 
 }
