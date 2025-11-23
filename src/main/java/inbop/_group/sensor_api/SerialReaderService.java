@@ -76,7 +76,8 @@ public class SerialReaderService {
     @PostConstruct
     public void init() {
         System.out.println("BTSerialReader init...");
-        openPortOnce();     // 기존 블루투스 포트 오픈
+        System.out.println("[BT] 설정된 포트: " + btPortName + ", Baud: " + baudRate);
+        openPortOnce();     // 블루투스 포트 오픈 시도
     }
     /**
      * 연결 상태 외부에서 확인 가능
@@ -95,6 +96,15 @@ public class SerialReaderService {
 
     private void openPortOnce() {
         System.out.println("SerialReaderService openPortOnce...");
+        
+        // 포트 이름이 설정되지 않았거나 비어있으면 연결 시도 안함
+        if (btPortName == null || btPortName.trim().isEmpty()) {
+            System.out.println("[BT] 포트 이름이 설정되지 않음 (BT.serial.port 설정 확인)");
+            running = false;
+            return;
+        }
+        
+        System.out.println("[BT] 센서 포트 연결 시도: " + btPortName);
         port = SerialPort.getCommPort(btPortName);
         port.setBaudRate(baudRate);
         port.setNumDataBits(8);
@@ -103,17 +113,21 @@ public class SerialReaderService {
         port.setComPortTimeouts(SerialPort.TIMEOUT_READ_BLOCKING, 2000, 0);
 
         if (!port.openPort()) {
-            System.out.println("[BT] Could not open serial port: " + btPortName);
+            System.out.println("[BT] 센서 포트 열기 실패: " + btPortName);
+            System.out.println("[BT] 가능한 포트 목록: " + String.join(", ", listPorts()));
             running = false;
-            return; // 더 이상 시도하지 않음
+            // 실제 센서 연결 실패 시 디버그 모드로 자동 전환하지 않음
+            // 디버그 모드는 수동으로 /api/serial/debug API를 호출해야 시작됨
+            return;
         }
 
-        System.out.println("[BT] Port opened: " + btPortName);
+        System.out.println("[BT] ✅ 센서 포트 연결 성공: " + btPortName + " (baud: " + baudRate + ")");
         reader = new BufferedReader(
                 new InputStreamReader(port.getInputStream(), StandardCharsets.UTF_8));
 
         running = true;
         executor.submit(this::readLoop);
+        System.out.println("[BT] 센서 데이터 읽기 시작...");
     }
 
 
@@ -365,18 +379,16 @@ public class SerialReaderService {
             while (running && debugMode) {
                 try {
                     int hr = debugHr; // 매 반복마다 최신 값 사용 (원하면 나중에 값 변경 가능)
-                    String rawJson = createFakeSensorJson(debugHr);
-                    Map<String, Object> sensorData =
-                            objectMapper.readValue(rawJson, Map.class);
+                    
+                    // 실제 센서와 동일한 형식으로 JSON 생성
+                    String fakeRawJson = createFakeSensorJson(debugHr);
+                    
+                    log.info("[DEBUG] Fake sensor data: {}", fakeRawJson);
 
-                    log.info("[DEBUG] Fake sensor data: {}", rawJson);
-
-                    // 최근 데이터 업데이트
-                    lastSensorData.set(sensorData);
-                    sink.tryEmitNext(rawJson);
-
-                    // DB 저장 (실제와 동일하게 처리)
-                    saveToDatabase(hr);
+                    // processSensorData를 통해 처리 (실제 센서 데이터와 동일한 처리)
+                    // 이 메서드는 HR을 추출하고, 올바른 형식으로 변환하며, 
+                    // lastSensorData 업데이트, sink 전송, DB 저장까지 모두 수행
+                    processSensorData(fakeRawJson);
 
                     Thread.sleep(1000);
                 } catch (Exception e) {
