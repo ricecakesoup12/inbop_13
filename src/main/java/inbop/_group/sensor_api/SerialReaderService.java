@@ -370,14 +370,9 @@ public class SerialReaderService {
 
                     log.info("[DEBUG] Fake sensor data: {}", rawJson);
 
-                    // 최근 데이터 업데이트
-                    lastSensorData.set(sensorData);
-                    sink.tryEmitNext(rawJson);
+                    processSensorData(rawJson);
 
-                    // DB 저장 (실제와 동일하게 처리)
-                    saveToDatabase(hr);
-
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (Exception e) {
                     log.error("[DEBUG] Fake sensor loop error", e);
                 }
