@@ -65,14 +65,37 @@
 
     <!-- 지도가 들어갈 영역 (화면 거의 꽉 채움) -->
     <div ref="mapEl" class="RouteMapFull"></div>
+
+    <!-- 심박수 경고 모달 -->
+    <div v-if="showHeartRateAlert" 
+         :class="['HeartRateAlertOverlay', alertType === 'danger' ? 'HeartRateAlertDanger' : 'HeartRateAlertWarning']">
+      <div class="HeartRateAlertContent">
+        <button @click="dismissHeartRateAlert" class="HeartRateAlertCloseButton">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+        <div class="HeartRateAlertIcon">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+        </div>
+        <div class="HeartRateAlertText">{{ alertType === 'danger' ? '위험' : '주의' }}</div>
+        <div class="HeartRateAlertHR">현재 심박수: {{ currentHeartRate }} bpm</div>
+        <button @click="dismissHeartRateAlert" class="HeartRateAlertDismissButton">
+          확인
+        </button>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, onMounted, onUnmounted } from 'vue'
+import { ref, onMounted, onUnmounted, computed } from 'vue'
 import { useRoute } from 'vue-router'
 import { loadNaverMap } from '@/utils/loadNaverMap'
 import { http } from '@/services/api/http'
+import { useMetricsStore } from '@/stores/metrics.store'
 
 // ====== 반응형 상태 ======
 const route = useRoute()
@@ -105,6 +128,118 @@ let walkingTimer: number | null = null
 let runningTimer: number | null = null
 
 const NAVER_ID = import.meta.env.VITE_NAVER_CLIENT_ID as string
+
+// ====== 심박수 모니터링 관련 ======
+const metricsStore = useMetricsStore()
+const userId = ref<string>(localStorage.getItem('userId') || '')
+
+// 실시간 심박수
+const currentHeartRate = computed(() => metricsStore.vitalNow.hr)
+
+// 기준 심박수 (운동 시작 전 15초 평균)
+const baselineHeartRate = ref<number | null>(null)
+const baselineHeartRateHistory = ref<number[]>([])
+let baselineTimer: number | null = null
+
+// 운동 중 심박수 히스토리 (15초 평균 계산용)
+const exerciseHeartRateHistory = ref<number[]>([])
+let heartRateCheckInterval: number | null = null
+
+// 경고 상태
+const showHeartRateAlert = ref(false)
+const alertType = ref<'warning' | 'danger'>('warning')
+
+// 기준 심박수 측정 시작 (운동 시작 전)
+const startBaselineMeasurement = () => {
+  baselineHeartRateHistory.value = []
+  baselineHeartRate.value = null
+  
+  // 15초 동안 심박수 수집 (1초마다)
+  let count = 0
+  baselineTimer = window.setInterval(() => {
+    if (currentHeartRate.value > 0) {
+      baselineHeartRateHistory.value.push(currentHeartRate.value)
+    }
+    count++
+    
+    if (count >= 15) {
+      // 15초 평균 계산
+      if (baselineHeartRateHistory.value.length > 0) {
+        const sum = baselineHeartRateHistory.value.reduce((a, b) => a + b, 0)
+        baselineHeartRate.value = Math.round(sum / baselineHeartRateHistory.value.length)
+        console.log('✅ 기준 심박수 설정:', baselineHeartRate.value, 'bpm')
+      }
+      
+      if (baselineTimer) {
+        clearInterval(baselineTimer)
+        baselineTimer = null
+      }
+    }
+  }, 1000)
+}
+
+// 운동 중 심박수 모니터링
+const startHeartRateMonitoring = () => {
+  exerciseHeartRateHistory.value = []
+  
+  // 1초마다 심박수 체크
+  heartRateCheckInterval = window.setInterval(() => {
+    if (currentHeartRate.value > 0) {
+      exerciseHeartRateHistory.value.push(currentHeartRate.value)
+      
+      // 최근 15개 데이터만 유지
+      if (exerciseHeartRateHistory.value.length > 15) {
+        exerciseHeartRateHistory.value.shift()
+      }
+      
+      // 15초 평균 계산 (데이터가 15개 이상이면)
+      if (exerciseHeartRateHistory.value.length >= 15) {
+        const avgHR = exerciseHeartRateHistory.value.reduce((a, b) => a + b, 0) / 15
+        checkHeartRateAlert(avgHR)
+      }
+    }
+  }, 1000)
+}
+
+// 심박수 경고 체크
+const checkHeartRateAlert = (avgHeartRate: number) => {
+  if (!baselineHeartRate.value) return
+  
+  const increase = avgHeartRate - baselineHeartRate.value
+  
+  // 위험: 30bpm 증가 또는 130bpm 이상
+  if (increase >= 30 || avgHeartRate >= 130) {
+    showHeartRateAlert.value = true
+    alertType.value = 'danger'
+    console.warn('⚠️ 위험: 심박수', Math.round(avgHeartRate), 'bpm (기준:', baselineHeartRate.value, 'bpm, 증가:', Math.round(increase), 'bpm)')
+  }
+  // 주의: 20bpm 증가 또는 120bpm 이상
+  else if (increase >= 20 || avgHeartRate >= 120) {
+    showHeartRateAlert.value = true
+    alertType.value = 'warning'
+    console.warn('⚠️ 주의: 심박수', Math.round(avgHeartRate), 'bpm (기준:', baselineHeartRate.value, 'bpm, 증가:', Math.round(increase), 'bpm)')
+  }
+  // 정상 범위면 경고 숨김
+  else {
+    showHeartRateAlert.value = false
+  }
+}
+
+// 심박수 모니터링 중지
+const stopHeartRateMonitoring = () => {
+  if (heartRateCheckInterval) {
+    clearInterval(heartRateCheckInterval)
+    heartRateCheckInterval = null
+  }
+  showHeartRateAlert.value = false
+  exerciseHeartRateHistory.value = []
+}
+
+// 경고 창 닫기 (사용자가 버튼 클릭)
+const dismissHeartRateAlert = () => {
+  showHeartRateAlert.value = false
+  console.log('✅ 사용자가 경고 창을 닫았습니다')
+}
 
 // ====== 1. 지도 초기화 ======
 const initMap = async () => {
@@ -751,6 +886,12 @@ const formatTime = (seconds: number): string => {
 const startRunning = () => {
   if (runningCompleted.value || isWalking.value || allSetsCompleted.value) return
   
+  // 첫 번째 뛰기 시작 전에 기준 심박수 측정
+  if (!baselineHeartRate.value && currentSet.value === 1) {
+    console.log('📊 기준 심박수 측정 시작...')
+    startBaselineMeasurement()
+  }
+  
   isRunning.value = true
   runningTimeLeft.value = runningMinutes.value * 60
   runningCompleted.value = false
@@ -758,6 +899,9 @@ const startRunning = () => {
   if (runningTimer) {
     clearInterval(runningTimer)
   }
+  
+  // 심박수 모니터링 시작
+  startHeartRateMonitoring()
   
   runningTimer = window.setInterval(() => {
     runningTimeLeft.value--
@@ -768,6 +912,10 @@ const startRunning = () => {
       isRunning.value = false
       runningCompleted.value = true
       runningTimeLeft.value = 0
+      
+      // 심박수 모니터링 중지
+      stopHeartRateMonitoring()
+      
       checkSetCompletion()
     }
   }, 1000)
@@ -784,6 +932,11 @@ const startWalking = () => {
     clearInterval(walkingTimer)
   }
   
+  // 걷기 중에도 심박수 모니터링 (뛰기 중에 시작했다면 계속)
+  if (!heartRateCheckInterval) {
+    startHeartRateMonitoring()
+  }
+  
   walkingTimer = window.setInterval(() => {
     walkingTimeLeft.value--
     
@@ -793,6 +946,10 @@ const startWalking = () => {
       isWalking.value = false
       walkingCompleted.value = true
       walkingTimeLeft.value = 0
+      
+      // 걷기 완료 시 심박수 모니터링 중지
+      stopHeartRateMonitoring()
+      
       checkSetCompletion()
     }
   }, 1000)
@@ -828,6 +985,11 @@ onUnmounted(() => {
   if (runningTimer) {
     clearInterval(runningTimer)
   }
+  if (baselineTimer) {
+    clearInterval(baselineTimer)
+  }
+  stopHeartRateMonitoring()
+  metricsStore.unsubscribeRealtime()
 })
 
 // 컴포넌트 마운트 시 쿼리 파라미터 읽고 자동으로 경로 로드
@@ -872,6 +1034,11 @@ onMounted(async () => {
   // 초기화
   currentSet.value = 1
   allSetsCompleted.value = false
+
+  // 실시간 심박수 구독
+  if (userId.value) {
+    metricsStore.subscribeRealtime(userId.value)
+  }
 
   // 2) 지도 먼저 초기화
   console.log('🗺️ 지도 초기화 시작...')
@@ -1085,6 +1252,152 @@ onMounted(async () => {
   background: #f3f4f6;
 }
 
+/* 심박수 경고 오버레이 */
+.HeartRateAlertOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.HeartRateAlertWarning {
+  background-color: rgba(255, 152, 0, 0.7); /* 주황색 불투명 */
+}
+
+.HeartRateAlertDanger {
+  background-color: rgba(244, 67, 54, 0.7); /* 빨간색 불투명 */
+}
+
+.HeartRateAlertContent {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  animation: pulse 1.5s ease-in-out infinite;
+  min-width: 250px;
+  position: relative;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.05);
+  }
+}
+
+.HeartRateAlertIcon {
+  width: 64px;
+  height: 64px;
+  color: currentColor;
+}
+
+.HeartRateAlertWarning .HeartRateAlertIcon {
+  color: #FF9800;
+}
+
+.HeartRateAlertDanger .HeartRateAlertIcon {
+  color: #F44336;
+}
+
+.HeartRateAlertText {
+  font-size: 32px;
+  font-weight: bold;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.HeartRateAlertWarning .HeartRateAlertText {
+  color: #FF9800;
+}
+
+.HeartRateAlertDanger .HeartRateAlertText {
+  color: #F44336;
+}
+
+.HeartRateAlertHR {
+  font-size: 18px;
+  color: #666;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.HeartRateAlertCloseButton {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  transition: background-color 0.2s;
+  color: #999;
+  width: 32px;
+  height: 32px;
+}
+
+.HeartRateAlertCloseButton:hover {
+  background-color: #f3f4f6;
+  color: #666;
+}
+
+.HeartRateAlertCloseButton svg {
+  width: 20px;
+  height: 20px;
+}
+
+.HeartRateAlertDismissButton {
+  margin-top: 8px;
+  padding: 12px 32px;
+  border: 2px solid;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Gowun Dodum', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+  min-width: 100px;
+}
+
+.HeartRateAlertWarning .HeartRateAlertDismissButton {
+  background-color: #FF9800;
+  color: white;
+  border-color: #FF9800;
+}
+
+.HeartRateAlertWarning .HeartRateAlertDismissButton:hover {
+  background-color: #F57C00;
+  border-color: #F57C00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.HeartRateAlertDanger .HeartRateAlertDismissButton {
+  background-color: #F44336;
+  color: white;
+  border-color: #F44336;
+}
+
+.HeartRateAlertDanger .HeartRateAlertDismissButton:hover {
+  background-color: #D32F2F;
+  border-color: #D32F2F;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(244, 67, 54, 0.3);
+}
+
 @media (max-width: 768px) {
   .RouteMapHeader {
     flex-direction: column;
@@ -1099,6 +1412,19 @@ onMounted(async () => {
   .RouteMapLoading {
     margin-left: 0;
     text-align: center;
+  }
+
+  .HeartRateAlertContent {
+    padding: 24px;
+    min-width: 200px;
+  }
+
+  .HeartRateAlertText {
+    font-size: 28px;
+  }
+
+  .HeartRateAlertHR {
+    font-size: 16px;
   }
 }
 </style>

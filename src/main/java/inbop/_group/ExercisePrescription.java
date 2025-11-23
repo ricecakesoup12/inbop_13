@@ -41,6 +41,10 @@ public class ExercisePrescription {
     @Column(length = 500)
     private String endStretchingUrl;  // 마무리 스트레칭 URL (선택사항)
     
+    // 난이도 (low, medium, high)
+    @Column(length = 20)
+    private String intensity;  // 난이도: "low", "medium", "high"
+    
     @Column(nullable = false)
     private String status;  // PENDING, ACCEPTED, DECLINED, COMPLETED
     

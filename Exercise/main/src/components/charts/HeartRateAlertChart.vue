@@ -1,8 +1,8 @@
 <template>
   <AppCard>
-    <div class="ActivityTrendChartContent">
-      <h3 class="ActivityTrendChartTitle">운동량</h3>
-      <div class="ActivityTrendChartContainer">
+    <div class="HeartRateAlertChartContent">
+      <h3 class="HeartRateAlertChartTitle">심박수 경고 횟수</h3>
+      <div class="HeartRateAlertChartContainer">
         <Line v-if="chartData" :data="chartData" :options="options" />
       </div>
     </div>
@@ -15,21 +15,34 @@ import { Line } from 'vue-chartjs'
 import AppCard from '@/components/common/AppCard.vue'
 import '@/components/charts/_LineChartBase'
 
-const props = defineProps<{ data: { x: string; y: number }[] }>()
+interface WeeklyAlertCount {
+  date: string
+  count: number
+}
 
-const chartData = computed(() => ({
-  labels: props.data.map((d: { x: string; y: number }) => d.x),
-  datasets: [
-    {
-      label: '운동 난이도',
-      data: props.data.map((d: { x: string; y: number }) => d.y),
-      borderColor: '#FF9800',
-      backgroundColor: 'rgba(255, 152, 0, 0.1)',
-      tension: 0.4,
-      fill: true,
-    },
-  ],
-}))
+const props = defineProps<{ data: WeeklyAlertCount[] }>()
+
+const chartData = computed(() => {
+  // WeeklyAlertCount[]를 { x: string, y: number }[] 형식으로 변환
+  const formattedData = props.data.map((d: WeeklyAlertCount) => ({
+    x: d.date,
+    y: d.count
+  }))
+  
+  return {
+    labels: formattedData.map((d: { x: string; y: number }) => d.x),
+    datasets: [
+      {
+        label: '경고 횟수',
+        data: formattedData.map((d: { x: string; y: number }) => d.y),
+        borderColor: '#F44336',
+        backgroundColor: 'rgba(244, 67, 54, 0.1)',
+        tension: 0.4,
+        fill: true,
+      },
+    ],
+  }
+})
 
 const options = {
   responsive: true,
@@ -46,17 +59,9 @@ const options = {
   scales: {
     y: { 
       beginAtZero: true, 
-      max: 3,
       ticks: { 
         font: { family: 'Gowun Dodum' },
         stepSize: 1,
-        callback: function(value: any) {
-          if (value === 0) return '안 함'
-          if (value === 1) return '쉬움'
-          if (value === 2) return '중간'
-          if (value === 3) return '어려움'
-          return value
-        }
       } 
     },
     x: { ticks: { font: { family: 'Gowun Dodum' } } },

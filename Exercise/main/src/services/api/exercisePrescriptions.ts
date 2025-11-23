@@ -13,6 +13,7 @@ export interface ExercisePrescription {
   sets: number
   endStretchingMinutes: number  // 5, 10, 15
   endStretchingUrl?: string  // 마무리 스트레칭 URL (선택사항)
+  intensity?: string  // 난이도: 'low' | 'medium' | 'high'
   status: 'PENDING' | 'ACCEPTED' | 'DECLINED' | 'COMPLETED'
   createdAt?: string
   acceptedAt?: string
@@ -31,6 +32,7 @@ export interface CreateExercisePrescriptionRequest {
   sets: number
   endStretchingMinutes: number
   endStretchingUrl?: string
+  intensity?: string  // 난이도: 'low' | 'medium' | 'high'
 }
 
 /**

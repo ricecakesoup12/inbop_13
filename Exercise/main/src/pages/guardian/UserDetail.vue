@@ -441,6 +441,7 @@
         <WeightTrendChart :data="dailyData.weight" />
         <HeartRateTrendChart :data="dailyData.hr" />
         <ActivityTrendChart :data="dailyData.activity" />
+        <HeartRateAlertChart :data="weeklyAlertCounts" />
       </div>
     </div>
 
@@ -528,7 +529,10 @@ import UserVitalsNow from '@/components/user/UserVitalsNow.vue'
 import WeightTrendChart from '@/components/charts/WeightTrendChart.vue'
 import HeartRateTrendChart from '@/components/charts/HeartRateTrendChart.vue'
 import ActivityTrendChart from '@/components/charts/ActivityTrendChart.vue'
+import HeartRateAlertChart from '@/components/charts/HeartRateAlertChart.vue'
 import defaultFace from '@/assets/images/default-face.png'
+import { getPrescriptionsByUser, type ExercisePrescription } from '@/services/api/exercisePrescriptions'
+import { getWeeklyAlertCounts, type WeeklyAlertCount } from '@/services/api/heartRateAlerts'
 
 const route = useRoute()
 const id = route.params.id as string
@@ -542,6 +546,7 @@ const error = computed(() => usersStore.error)
 const vital = computed(() => metricsStore.vitalNow)
 
 const weightRecords = ref<WeightRecord[]>([])
+const weeklyAlertCounts = ref<WeeklyAlertCount[]>([])
 const exerciseStatus = ref<ExerciseStatus | null>(null)
 const userLocation = ref<{ lat: number; lng: number } | null>(null)
 let locationUpdateInterval: number | null = null
@@ -559,7 +564,8 @@ const prescriptionForm = reactive({
   runningMinutes: 0,
   sets: 0,
   endStretchingMinutes: 5,
-  endStretchingUrl: ''
+  endStretchingUrl: '',
+  intensity: '' as string  // 난이도: 'low', 'medium', 'high'
 })
 const prescriptionLoading = ref(false)
 
@@ -575,6 +581,34 @@ const editForm = reactive({
   weight: null as number | null,
 })
 
+// 완료된 처방 조회
+const completedPrescriptions = ref<ExercisePrescription[]>([])
+
+// 완료된 처방 로드
+const loadCompletedPrescriptions = async () => {
+  try {
+    const allPrescriptions = await getPrescriptionsByUser(id)
+    completedPrescriptions.value = allPrescriptions.filter(p => 
+      p.status === 'COMPLETED' && p.completedAt
+    )
+    console.log('✅ 완료된 처방 로드:', completedPrescriptions.value.length, '개')
+  } catch (error) {
+    console.error('❌ 완료된 처방 로드 실패:', error)
+    completedPrescriptions.value = []
+  }
+}
+
+// 난이도 문자열을 숫자로 변환 (low=1, medium=2, high=3)
+const intensityToNumber = (intensity?: string): number => {
+  if (!intensity) return 0
+  switch (intensity.toLowerCase()) {
+    case 'low': return 1
+    case 'medium': return 2
+    case 'high': return 3
+    default: return 0
+  }
+}
+
 const dailyData = computed(() => {
   const daily = metricsStore.daily
   
@@ -584,10 +618,37 @@ const dailyData = computed(() => {
     y: record.weight
   }))
   
+  // 완료된 처방을 날짜별로 매핑 (completedAt 날짜 기준)
+  const prescriptionByDate = new Map<string, ExercisePrescription>()
+  completedPrescriptions.value.forEach(prescription => {
+    if (prescription.completedAt) {
+      // completedAt 날짜를 YYYY-MM-DD 형식으로 변환
+      const date = new Date(prescription.completedAt).toISOString().split('T')[0]
+      prescriptionByDate.set(date, prescription)
+    }
+  })
+  
+  // 운동량 데이터 생성 (날짜별로)
+  // 완료된 처방이 있는 날은 난이도 점수(1,2,3), 없는 날은 0
+  const activityData = daily.map((d) => {
+    const prescription = prescriptionByDate.get(d.date)
+    
+    if (prescription && prescription.intensity) {
+      // 처방 완료된 날짜에 난이도 점수 부여
+      return { 
+        x: d.date, 
+        y: intensityToNumber(prescription.intensity)
+      }
+    }
+    
+    // 운동 안 한 날 또는 난이도 정보가 없는 날은 0
+    return { x: d.date, y: 0 }
+  })
+  
   return {
     weight: weightData.length > 0 ? weightData : daily.map((d) => ({ x: d.date, y: d.weight || 0 })),
     hr: daily.map((d) => ({ x: d.date, y: d.avgHr || 0 })),
-    activity: daily.map((d) => ({ x: d.date, y: d.activity || 0 })),
+    activity: activityData,
   }
 })
 
@@ -619,6 +680,14 @@ onMounted(async () => {
     weightRecords.value = await getUserWeightRecords(id)
   } catch (error) {
     console.error('몸무게 기록 로드 실패:', error)
+  }
+
+  // 일주일 경고 횟수 로드
+  try {
+    weeklyAlertCounts.value = await getWeeklyAlertCounts(id)
+  } catch (error) {
+    console.error('일주일 경고 횟수 로드 실패:', error)
+    weeklyAlertCounts.value = []
   }
   
   // 운동 상태 로드
@@ -695,6 +764,9 @@ onMounted(async () => {
   } catch (error) {
     console.warn('⚠️ 채팅 메시지 로드 실패 (무시하고 계속):', error)
   }
+  
+  // 완료된 처방 로드
+  await loadCompletedPrescriptions()
 })
 
 // 채팅 메시지 로드
@@ -764,7 +836,8 @@ const sendPrescription = async () => {
       runningMinutes: prescriptionForm.runningMinutes,
       sets: prescriptionForm.sets,
       endStretchingMinutes: prescriptionForm.endStretchingMinutes,
-      endStretchingUrl: prescriptionForm.endStretchingUrl?.trim() || undefined
+      endStretchingUrl: prescriptionForm.endStretchingUrl?.trim() || undefined,
+      intensity: prescriptionForm.intensity || undefined
     }
 
     console.log('📤 처방 전송 요청:', request)
@@ -783,6 +856,7 @@ const sendPrescription = async () => {
     prescriptionForm.sets = 0
     prescriptionForm.endStretchingMinutes = 5
     prescriptionForm.endStretchingUrl = ''
+    prescriptionForm.intensity = ''
   } catch (error: any) {
     console.error('❌ 처방 전송 실패:', error)
     console.error('❌ 에러 상세:', {
@@ -909,6 +983,9 @@ const applyRecommendationToPrescription = () => {
     prescriptionForm.runningMinutes = interval.운동시간분 || 0
     prescriptionForm.walkingMinutes = interval.휴식시간분 || 0
     prescriptionForm.sets = interval.세트수 || 0
+    
+    // 난이도 적용 (강도 필드에서 가져오기)
+    prescriptionForm.intensity = interval.강도 || ''
   }
 
   console.log('✅ AI 추천을 처방 폼에 적용했습니다:', prescriptionForm)

@@ -356,11 +356,27 @@
         </div>
       </div>
     </AppModal>
+
+    <!-- 심박수 주의 팝업 -->
+    <div v-if="showHeartRateAlertPopup" class="HeartRateAlertPopupOverlay" @click="closeHeartRateAlertPopup">
+      <div class="HeartRateAlertPopupContent" @click.stop>
+        <div class="HeartRateAlertPopupTitle">심박수 주의</div>
+        <div class="HeartRateAlertPopupMessage">
+          현재 심박수가 {{ currentHeartRate }} bpm 입니다.
+          <br>휴식을 취해주세요.
+        </div>
+        <div class="HeartRateAlertPopupActions">
+          <AppButton variant="solid" @click="closeHeartRateAlertPopup" class="HeartRateAlertPopupConfirmButton">
+            확인
+          </AppButton>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
 <script setup lang="ts">
-import { ref, computed, onMounted, watch } from 'vue'
+import { ref, computed, onMounted, onBeforeUnmount, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import AppCard from '@/components/common/AppCard.vue'
 import AppButton from '@/components/common/AppButton.vue'
@@ -373,6 +389,7 @@ import { useUsersStore } from '@/stores/users.store'
 import { getPendingSurveyRequests } from '@/services/api/surveyRequests'
 import { updateExerciseStatus } from '@/services/api/exerciseStatus'
 import { getPendingPrescription, acceptPrescription, declinePrescription, getPrescriptionsByUser, completePrescription, type ExercisePrescription } from '@/services/api/exercisePrescriptions'
+import { createHeartRateAlert } from '@/services/api/heartRateAlerts'
 import type { SurveyRequest } from '@/services/api/surveyRequests'
 import { getSproutCount, earnSprout, spendSprouts } from '@/services/api/sprouts'
 import { upsertLocation } from '@/services/api/locations'
@@ -584,6 +601,12 @@ watch(position, (newPos) => {
 const vital = computed(() => metricsStore.vitalNow)
 const currentUser = computed(() => usersStore.detail)
 const isExercising = ref(false)
+
+// 심박수 경고 관련
+const showHeartRateAlertPopup = ref(false)
+const currentHeartRate = computed(() => vital.value.hr)
+const lastAlertTime = ref<number>(0)
+let heartRateAlertCheckInterval: number | null = null
 
 // 디버깅용: 콘솔에서 확인할 수 있도록 전역 함수 등록
 if (typeof window !== 'undefined') {
@@ -845,6 +868,61 @@ const previousChatPage = () => {
 
 let exerciseTimer: number | null = null
 
+// 심박수 경고 체크
+const checkHeartRateAlert = async () => {
+  const hr = currentHeartRate.value
+  const userId = localStorage.getItem('userId')
+  
+  if (!hr || hr <= 0 || !userId) return
+  
+  // 130bpm 초과 시 경고
+  if (hr > 130) {
+    const now = Date.now()
+    // 마지막 경고로부터 1분 이내면 중복 방지
+    if (now - lastAlertTime.value < 60000) {
+      return
+    }
+    
+    lastAlertTime.value = now
+    
+    // 팝업 표시
+    showHeartRateAlertPopup.value = true
+    
+    // 백엔드에 경고 기록 (에러 발생해도 팝업은 표시)
+    try {
+      await createHeartRateAlert(Number(userId), hr)
+      console.log('✅ 심박수 경고 기록 완료:', hr, 'bpm')
+    } catch (error) {
+      console.error('❌ 심박수 경고 기록 실패:', error)
+      // 백엔드 기록 실패해도 팝업은 표시
+    }
+  }
+}
+
+// 심박수 모니터링 시작
+const startHeartRateMonitoring = () => {
+  // 5초마다 심박수 체크
+  heartRateAlertCheckInterval = window.setInterval(() => {
+    checkHeartRateAlert()
+  }, 5000)
+  
+  // 초기 체크
+  checkHeartRateAlert()
+}
+
+// 심박수 모니터링 중지
+const stopHeartRateMonitoring = () => {
+  if (heartRateAlertCheckInterval) {
+    clearInterval(heartRateAlertCheckInterval)
+    heartRateAlertCheckInterval = null
+  }
+}
+
+// 심박수 경고 팝업 닫기
+const closeHeartRateAlertPopup = () => {
+  showHeartRateAlertPopup.value = false
+}
+
 onMounted(async () => {
   // localStorage에서 사용자 ID 확인
   const userId = localStorage.getItem('userId')
@@ -908,6 +986,14 @@ onMounted(async () => {
   
   // 자동 위치 추적 및 전송 (백그라운드)
   startLocationTracking(userId)
+  
+  // 심박수 모니터링 시작
+  startHeartRateMonitoring()
+})
+
+onBeforeUnmount(() => {
+  // 심박수 모니터링 중지
+  stopHeartRateMonitoring()
 })
 
 // 위치 추적 시작
@@ -1642,4 +1728,96 @@ const reconnectBluetooth = async () => {
   }
 }
 </script>
+
+<style scoped>
+/* 심박수 주의 팝업 */
+.HeartRateAlertPopupOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(255, 152, 0, 0.7);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9999;
+  backdrop-filter: blur(4px);
+}
+
+.HeartRateAlertPopupContent {
+  background: white;
+  border-radius: 16px;
+  padding: 32px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  min-width: 300px;
+  max-width: 400px;
+}
+
+.HeartRateAlertPopupTitle {
+  font-size: 24px;
+  font-weight: bold;
+  color: #FF9800;
+  font-family: 'Gowun Dodum', sans-serif;
+  text-align: center;
+}
+
+.HeartRateAlertPopupMessage {
+  font-size: 16px;
+  color: #333;
+  font-family: 'Gowun Dodum', sans-serif;
+  text-align: center;
+  line-height: 1.6;
+}
+
+.HeartRateAlertPopupActions {
+  margin-top: 8px;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+}
+
+.HeartRateAlertPopupConfirmButton {
+  padding: 12px 32px;
+  background-color: #FF9800;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  font-family: 'Gowun Dodum', sans-serif;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.HeartRateAlertPopupConfirmButton:hover {
+  background-color: #F57C00;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(255, 152, 0, 0.3);
+}
+
+.HeartRateAlertPopupConfirmButton:active {
+  transform: translateY(0);
+}
+
+@media (max-width: 768px) {
+  .HeartRateAlertPopupContent {
+    padding: 24px;
+    min-width: 250px;
+    margin: 16px;
+  }
+
+  .HeartRateAlertPopupTitle {
+    font-size: 20px;
+  }
+
+  .HeartRateAlertPopupMessage {
+    font-size: 14px;
+  }
+}
+</style>
 

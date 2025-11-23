@@ -3,6 +3,13 @@
     <div class="GuardianHomeHeader">
       <h2 class="GuardianHomeTitle">사용자 리스트</h2>
       <div class="GuardianHomeActions">
+        <AppButton variant="outline" @click="showHeartRateAlerts = true" class="HeartRateAlertsButton">
+          <svg class="HeartRateAlertsIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+          </svg>
+          심박수 경고
+          <span v-if="activeAlertsCount > 0" class="HeartRateAlertsBadge">{{ activeAlertsCount }}</span>
+        </AppButton>
         <AppButton variant="outline" @click="showLocationMap = true" class="ViewLocationMapButton">
           <svg class="ViewLocationMapIcon" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
@@ -54,6 +61,32 @@
     <!-- 실시간 위치 보기 모달 -->
     <AppModal :open="showLocationMap" title="전체 사용자 실시간 위치" @close="showLocationMap = false" :wide="true">
       <GuardianAllUsersMap :users="users" />
+    </AppModal>
+
+    <!-- 심박수 경고 모달 -->
+    <AppModal :open="showHeartRateAlerts" title="심박수 경고" @close="showHeartRateAlerts = false" :wide="true">
+      <div class="HeartRateAlertsModalContent">
+        <div v-if="loadingAlerts" class="HeartRateAlertsLoading">
+          경고 목록을 불러오는 중...
+        </div>
+        <div v-else-if="activeAlerts.length === 0" class="HeartRateAlertsEmpty">
+          현재 심박수 경고가 있는 사용자가 없습니다.
+        </div>
+        <div v-else class="HeartRateAlertsList">
+          <div
+            v-for="alert in activeAlerts"
+            :key="alert.userId"
+            @click="openUser(String(alert.userId))"
+            class="HeartRateAlertItem"
+          >
+            <div class="HeartRateAlertItemInfo">
+              <div class="HeartRateAlertItemName">{{ alert.userName }}</div>
+              <div class="HeartRateAlertItemHR">심박수: {{ alert.heartRate }} bpm</div>
+            </div>
+            <div class="HeartRateAlertItemTime">{{ formatAlertTime(alert.alertedAt) }}</div>
+          </div>
+        </div>
+      </div>
     </AppModal>
 
     <!-- 사용자 추가 모달 -->
@@ -250,6 +283,7 @@ import { useUsersStore } from '@/stores/users.store'
 import { checkUserCode } from '@/services/api/users'
 import { getAllLocations } from '@/services/api/locations'
 import type { LocationDto } from '@/services/api/locations'
+import { getActiveAlerts, type ActiveAlert } from '@/services/api/heartRateAlerts'
 import UserListItem from '@/components/user/UserListItem.vue'
 import GuardianAllUsersMap from '@/components/map/GuardianAllUsersMap.vue'
 import ConfirmDialog from '@/components/common/ConfirmDialog.vue'
@@ -273,7 +307,14 @@ const deleteDialog = reactive({
 
 const showAddUser = ref(false)
 const showLocationMap = ref(false)
+const showHeartRateAlerts = ref(false)
 const addLoading = ref(false)
+
+// 심박수 경고 관련
+const activeAlerts = ref<ActiveAlert[]>([])
+const loadingAlerts = ref(false)
+const activeAlertsCount = computed(() => activeAlerts.value.length)
+let alertsUpdateInterval: number | null = null
 const codeError = ref('')
 const fileInputRef = ref<HTMLInputElement | null>(null)
 const userLocations = ref<Record<string, { lat: number; lng: number } | null>>({})
@@ -394,6 +435,39 @@ const updateUserLocations = async () => {
   }
 }
 
+// 심박수 경고 목록 로드
+const loadActiveAlerts = async () => {
+  loadingAlerts.value = true
+  try {
+    const alerts = await getActiveAlerts()
+    // 심박수 내림차순 정렬
+    activeAlerts.value = alerts.sort((a, b) => b.heartRate - a.heartRate)
+    console.log('✅ 활성 심박수 경고 로드:', activeAlerts.value.length, '명')
+  } catch (error) {
+    console.error('❌ 활성 심박수 경고 로드 실패:', error)
+    activeAlerts.value = []
+  } finally {
+    loadingAlerts.value = false
+  }
+}
+
+// 경고 시간 포맷팅
+const formatAlertTime = (alertedAt: string): string => {
+  const date = new Date(alertedAt)
+  const now = new Date()
+  const diff = now.getTime() - date.getTime()
+  const minutes = Math.floor(diff / 60000)
+  
+  if (minutes < 1) {
+    return '방금 전'
+  } else if (minutes < 60) {
+    return `${minutes}분 전`
+  } else {
+    const hours = Math.floor(minutes / 60)
+    return `${hours}시간 전`
+  }
+}
+
 onMounted(async () => {
   await loadUsers()
   
@@ -402,11 +476,20 @@ onMounted(async () => {
   
   // 주기적으로 위치 업데이트 (5초마다)
   locationUpdateInterval = window.setInterval(updateUserLocations, 5000)
+  
+  // 심박수 경고 목록 로드
+  await loadActiveAlerts()
+  
+  // 주기적으로 심박수 경고 업데이트 (10초마다)
+  alertsUpdateInterval = window.setInterval(loadActiveAlerts, 10000)
 })
 
 onBeforeUnmount(() => {
   if (locationUpdateInterval) {
     clearInterval(locationUpdateInterval)
+  }
+  if (alertsUpdateInterval) {
+    clearInterval(alertsUpdateInterval)
   }
 })
 
@@ -527,4 +610,108 @@ const handleAddUser = async () => {
   }
 }
 </script>
+
+<style scoped>
+/* 심박수 경고 버튼 */
+.HeartRateAlertsButton {
+  position: relative;
+}
+
+.HeartRateAlertsBadge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  background-color: #F44336;
+  color: white;
+  border-radius: 50%;
+  width: 20px;
+  height: 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.HeartRateAlertsIcon {
+  width: 16px;
+  height: 16px;
+}
+
+/* 심박수 경고 모달 */
+.HeartRateAlertsModalContent {
+  padding: 1rem;
+}
+
+.HeartRateAlertsLoading,
+.HeartRateAlertsEmpty {
+  text-align: center;
+  padding: 2rem;
+  color: var(--text-sub);
+  font-size: 0.875rem;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.HeartRateAlertsList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.HeartRateAlertItem {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background-color: #FFF3E0;
+  border: 1px solid #FFB74D;
+  border-radius: 0.75rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.HeartRateAlertItem:hover {
+  background-color: #FFE0B2;
+  box-shadow: 0 2px 8px rgba(255, 152, 0, 0.2);
+}
+
+.HeartRateAlertItemInfo {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.HeartRateAlertItemName {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-main);
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.HeartRateAlertItemHR {
+  font-size: 0.875rem;
+  color: #F57C00;
+  font-family: 'Gowun Dodum', sans-serif;
+}
+
+.HeartRateAlertItemTime {
+  font-size: 0.875rem;
+  color: var(--text-sub);
+  font-family: 'Gowun Dodum', sans-serif;
+  white-space: nowrap;
+}
+
+@media (max-width: 768px) {
+  .HeartRateAlertItem {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+
+  .HeartRateAlertItemTime {
+    align-self: flex-end;
+  }
+}
+</style>
 
