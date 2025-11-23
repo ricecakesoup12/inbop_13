@@ -260,8 +260,11 @@ public class SerialReaderService {
 
     public Map<String, Object> getConnectionStatus() {
         Map<String, Object> status = new HashMap<>();
-        status.put("debugMode", debugMode); // 디버그 모드
-        status.put("connected", port != null && port.isOpen());
+
+        boolean portConnected = (port != null && port.isOpen());
+        boolean connected = debugMode || portConnected;
+        status.put("connected", connected);
+        status.put("debugMode", debugMode);
         status.put("portName", portName);
         status.put("baud", baudRate);
         status.put("running", running);
@@ -375,7 +378,7 @@ public class SerialReaderService {
                     // DB 저장 (실제와 동일하게 처리)
                     saveToDatabase(hr);
 
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (Exception e) {
                     log.error("[DEBUG] Fake sensor loop error", e);
                 }
