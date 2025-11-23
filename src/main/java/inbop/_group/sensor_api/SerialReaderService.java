@@ -264,7 +264,6 @@ public class SerialReaderService {
         boolean portConnected = (port != null && port.isOpen());
         boolean connected = debugMode || portConnected;
         status.put("connected", connected);
-        status.put("debugMode", debugMode);
         status.put("portName", portName);
         status.put("baud", baudRate);
         status.put("running", running);

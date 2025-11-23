@@ -27,18 +27,21 @@ public class SerialController {
     // 최근 1건
     @GetMapping("/serial/latest")
     public Map<String, Object> latest() {
+        System.out.println("🔵 /api/latest 요청");
         return service.getLastSensorData();
     }
 
     // 실시간 스트림 (Server-Sent Events) - JSON 형식
-    @GetMapping(value = "/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
+    @GetMapping(value = "/serial/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream() {
+        System.out.println("🔵 /api/stream SSE 구독");
         return service.streamJson();
     }
 
     // 센서 연결 상태 확인
     @GetMapping("/serial/status")
     public Map<String, Object> status() {
+        System.out.println("🔵 /api/status 요청");
         return service.getConnectionStatus();
     }
 
