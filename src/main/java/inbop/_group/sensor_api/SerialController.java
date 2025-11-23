@@ -46,6 +46,7 @@ public class SerialController {
     @PostMapping("/bluetooth/reconnect")
     public ResponseEntity<?> reconnect(@RequestBody ReconnectRequest request) {
         System.out.println("재연결 요청 유저 ID: " + request.getUserId());
+        service.reconnect();
         return ResponseEntity.ok("Reconnecting...");
     }
 
