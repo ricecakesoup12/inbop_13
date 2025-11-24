@@ -278,7 +278,6 @@ public class SerialReaderService {
         boolean portConnected = (port != null && port.isOpen());
         boolean connected = debugMode || portConnected;
         status.put("connected", connected);
-        status.put("debugMode", debugMode);
         status.put("portName", portName);
         status.put("baud", baudRate);
         status.put("running", running);
@@ -385,12 +384,9 @@ public class SerialReaderService {
                     
                     log.info("[DEBUG] Fake sensor data: {}", fakeRawJson);
 
-                    // processSensorData를 통해 처리 (실제 센서 데이터와 동일한 처리)
-                    // 이 메서드는 HR을 추출하고, 올바른 형식으로 변환하며, 
-                    // lastSensorData 업데이트, sink 전송, DB 저장까지 모두 수행
-                    processSensorData(fakeRawJson);
+                    processSensorData(rawJson);
 
-                    Thread.sleep(1000);
+                    Thread.sleep(100);
                 } catch (Exception e) {
                     log.error("[DEBUG] Fake sensor loop error", e);
                 }
