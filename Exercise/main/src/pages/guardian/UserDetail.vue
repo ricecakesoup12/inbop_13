@@ -645,6 +645,15 @@ const dailyData = computed(() => {
     return { x: d.date, y: 0 }
   })
   
+  // 디버깅: 그래프 데이터 확인
+  console.log('📊 그래프 데이터:', {
+    daily: daily.length,
+    completedPrescriptions: completedPrescriptions.value.length,
+    activityDataPoints: activityData.filter(d => d.y > 0).length,
+    hrDataPoints: daily.filter(d => d.avgHr).length,
+    weeklyAlertCounts: weeklyAlertCounts.value.length
+  })
+  
   return {
     weight: weightData.length > 0 ? weightData : daily.map((d) => ({ x: d.date, y: d.weight || 0 })),
     hr: daily.map((d) => ({ x: d.date, y: d.avgHr || 0 })),
@@ -675,6 +684,9 @@ onMounted(async () => {
   await metricsStore.fetchDaily(id)
   metricsStore.subscribeRealtime(id)
   
+  // 완료된 처방 로드 (운동량 그래프용)
+  await loadCompletedPrescriptions()
+  
   // 몸무게 기록 로드
   try {
     weightRecords.value = await getUserWeightRecords(id)
@@ -685,8 +697,9 @@ onMounted(async () => {
   // 일주일 경고 횟수 로드
   try {
     weeklyAlertCounts.value = await getWeeklyAlertCounts(id)
+    console.log('✅ 일주일 경고 횟수 로드 완료:', weeklyAlertCounts.value.length, '개')
   } catch (error) {
-    console.error('일주일 경고 횟수 로드 실패:', error)
+    console.error('❌ 일주일 경고 횟수 로드 실패:', error)
     weeklyAlertCounts.value = []
   }
   

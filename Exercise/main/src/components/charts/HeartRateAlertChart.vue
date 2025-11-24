@@ -24,10 +24,18 @@ const props = defineProps<{ data: WeeklyAlertCount[] }>()
 
 const chartData = computed(() => {
   // WeeklyAlertCount[]를 { x: string, y: number }[] 형식으로 변환
-  const formattedData = props.data.map((d: WeeklyAlertCount) => ({
-    x: d.date,
-    y: d.count
-  }))
+  const formattedData = props.data && props.data.length > 0
+    ? props.data.map((d: WeeklyAlertCount) => ({
+        x: d.date,
+        y: d.count
+      }))
+    : []
+  
+  console.log('📊 심박수 경고 횟수 차트 데이터:', {
+    rawData: props.data,
+    formattedData: formattedData.length,
+    sample: formattedData.slice(0, 3)
+  })
   
   return {
     labels: formattedData.map((d: { x: string; y: number }) => d.x),

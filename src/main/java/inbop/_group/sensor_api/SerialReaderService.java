@@ -384,7 +384,8 @@ public class SerialReaderService {
                     
                     log.info("[DEBUG] Fake sensor data: {}", fakeRawJson);
 
-                    processSensorData(rawJson);
+                    processSensorData(fakeRawJson);
+                    
 
                     Thread.sleep(100);
                 } catch (Exception e) {
