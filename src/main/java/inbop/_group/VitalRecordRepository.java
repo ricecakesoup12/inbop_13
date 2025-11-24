@@ -23,6 +23,24 @@ public interface VitalRecordRepository extends JpaRepository<VitalRecord, Long> 
     
     // 사용자의 모든 기록 조회 (최신순)
     List<VitalRecord> findByUserIdOrderByRecordedAtDesc(Long userId);
+    
+    // 날짜별 평균 심박수 조회 (날짜 프로젝션)
+    @Query("SELECT DATE(v.recordedAt) as date, AVG(v.hr) as avgHr " +
+           "FROM VitalRecord v " +
+           "WHERE v.userId = :userId " +
+           "AND v.recordedAt >= :startDate " +
+           "GROUP BY DATE(v.recordedAt) " +
+           "ORDER BY date")
+    List<DailyAvgHeartRate> findDailyAvgHeartRate(
+        @Param("userId") Long userId,
+        @Param("startDate") LocalDateTime startDate
+    );
+    
+    // 인터페이스 프로젝션
+    interface DailyAvgHeartRate {
+        java.time.LocalDate getDate();
+        Double getAvgHr();
+    }
 }
 
 

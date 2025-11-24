@@ -585,13 +585,29 @@ const editForm = reactive({
 const completedPrescriptions = ref<ExercisePrescription[]>([])
 
 // 완료된 처방 로드
+// 규칙: status === 'COMPLETED' && completedAt 존재 → 운동 완료
 const loadCompletedPrescriptions = async () => {
   try {
     const allPrescriptions = await getPrescriptionsByUser(id)
-    completedPrescriptions.value = allPrescriptions.filter(p => 
-      p.status === 'COMPLETED' && p.completedAt
-    )
+    // 처방 완료 여부 확인: status가 COMPLETED이고 completedAt이 있어야 함
+    completedPrescriptions.value = allPrescriptions.filter(p => {
+      const isCompleted = p.status === 'COMPLETED' && p.completedAt
+      if (isCompleted) {
+        console.log(`✅ 완료된 처방 발견: ID=${p.id}, 날짜=${p.completedAt}, 난이도=${p.intensity || '없음'}`)
+      }
+      return isCompleted
+    })
     console.log('✅ 완료된 처방 로드:', completedPrescriptions.value.length, '개')
+    
+    // 완료된 처방 상세 정보 출력
+    if (completedPrescriptions.value.length > 0) {
+      console.log('📋 완료된 처방 상세:', completedPrescriptions.value.map(p => ({
+        id: p.id,
+        completedAt: p.completedAt,
+        intensity: p.intensity,
+        status: p.status
+      })))
+    }
   } catch (error) {
     console.error('❌ 완료된 처방 로드 실패:', error)
     completedPrescriptions.value = []
@@ -619,44 +635,75 @@ const dailyData = computed(() => {
   }))
   
   // 완료된 처방을 날짜별로 매핑 (completedAt 날짜 기준)
+  // 처방 완료 여부: status === 'COMPLETED' && completedAt 존재
   const prescriptionByDate = new Map<string, ExercisePrescription>()
   completedPrescriptions.value.forEach(prescription => {
-    if (prescription.completedAt) {
+    // 처방 완료 여부 확인: status가 COMPLETED이고 completedAt이 있어야 함
+    if (prescription.status === 'COMPLETED' && prescription.completedAt) {
       // completedAt 날짜를 YYYY-MM-DD 형식으로 변환
       const date = new Date(prescription.completedAt).toISOString().split('T')[0]
       prescriptionByDate.set(date, prescription)
+      console.log(`✅ 처방 완료 매핑: 날짜=${date}, 난이도=${prescription.intensity || '없음'}, ID=${prescription.id}`)
     }
   })
   
+  // daily가 비어있으면 최근 7일 날짜 생성
+  const dailyDates = daily.length > 0 
+    ? daily.map(d => d.date)
+    : Array.from({ length: 7 }, (_, i) => {
+        const date = new Date()
+        date.setDate(date.getDate() - (6 - i))
+        return date.toISOString().split('T')[0]
+      })
+  
   // 운동량 데이터 생성 (날짜별로)
-  // 완료된 처방이 있는 날은 난이도 점수(1,2,3), 없는 날은 0
-  const activityData = daily.map((d) => {
-    const prescription = prescriptionByDate.get(d.date)
+  // 규칙: 
+  // - 처방 완료(status=COMPLETED) + 완료 날짜(completedAt) + 난이도(intensity) 있으면 → 난이도에 따라 1,2,3
+  // - 그 외 모든 경우 → 0 (운동 안 함)
+  const activityData = dailyDates.map((date) => {
+    const prescription = prescriptionByDate.get(date)
     
-    if (prescription && prescription.intensity) {
-      // 처방 완료된 날짜에 난이도 점수 부여
+    // 처방이 완료되었고 난이도 정보가 있는 경우에만 점수 부여
+    if (prescription && prescription.status === 'COMPLETED' && prescription.intensity) {
+      const score = intensityToNumber(prescription.intensity)
+      console.log(`📊 운동 완료: 날짜=${date}, 난이도=${prescription.intensity}, 점수=${score}`)
       return { 
-        x: d.date, 
-        y: intensityToNumber(prescription.intensity)
+        x: date, 
+        y: score
       }
     }
     
-    // 운동 안 한 날 또는 난이도 정보가 없는 날은 0
-    return { x: d.date, y: 0 }
+    // 운동 안 한 날: 처방이 없거나, 완료되지 않았거나, 난이도 정보가 없으면 0
+    return { x: date, y: 0 }
   })
   
+  // daily 데이터가 있으면 사용, 없으면 빈 데이터 생성
+  const hrData = daily.length > 0
+    ? daily.map((d) => ({ x: d.date, y: d.avgHr || 0 }))
+    : dailyDates.map((date) => ({ x: date, y: 0 }))
+  
+  const weightDataFromDaily = daily.length > 0
+    ? daily.map((d) => ({ x: d.date, y: d.weight || 0 }))
+    : dailyDates.map((date) => ({ x: date, y: 0 }))
+  
   // 디버깅: 그래프 데이터 확인
+  const activityDataWithScore = activityData.filter(d => d.y > 0)
   console.log('📊 그래프 데이터:', {
     daily: daily.length,
+    dailyDates: dailyDates.length,
     completedPrescriptions: completedPrescriptions.value.length,
-    activityDataPoints: activityData.filter(d => d.y > 0).length,
+    completedPrescriptionsWithDate: completedPrescriptions.value.filter(p => p.status === 'COMPLETED' && p.completedAt).length,
+    activityDataPoints: activityDataWithScore.length,
+    activityDataScores: activityDataWithScore.map(d => `${d.x}=${d.y}`).join(', '),
     hrDataPoints: daily.filter(d => d.avgHr).length,
-    weeklyAlertCounts: weeklyAlertCounts.value.length
+    weeklyAlertCounts: weeklyAlertCounts.value.length,
+    prescriptionByDateSize: prescriptionByDate.size,
+    prescriptionDates: Array.from(prescriptionByDate.keys()).join(', ')
   })
   
   return {
-    weight: weightData.length > 0 ? weightData : daily.map((d) => ({ x: d.date, y: d.weight || 0 })),
-    hr: daily.map((d) => ({ x: d.date, y: d.avgHr || 0 })),
+    weight: weightData.length > 0 ? weightData : weightDataFromDaily,
+    hr: hrData,
     activity: activityData,
   }
 })

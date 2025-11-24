@@ -35,7 +35,9 @@ public class SerialController {
     @GetMapping(value = "/serial/stream", produces = MediaType.TEXT_EVENT_STREAM_VALUE)
     public Flux<String> stream() {
         System.out.println("🔵 /api/stream SSE 구독");
-        return service.streamJson();
+        // SSE 형식: "data: {json}\n\n"
+        return service.streamJson()
+            .map(json -> "data: " + json + "\n\n");
     }
 
     // 센서 연결 상태 확인
